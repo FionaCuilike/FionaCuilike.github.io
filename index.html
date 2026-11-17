@@ -129,6 +129,18 @@
         .project-note { color: #64748b; font-size: 0.9rem; }
         .project-note i { margin-right: 4px; }
 
+        /* 演讲区域 */
+        .talk-photos { display: grid; grid-template-columns: 1.6fr 1fr; gap: 12px; margin-bottom: 2.5rem; }
+        .talk-photos figure { margin: 0; min-width: 0; }
+        .talk-photos img { display: block; width: 100%; height: 340px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .talk-photos figcaption { margin-top: 6px; color: #64748b; font-size: 0.85rem; }
+        .talk-item { display: flex; gap: 20px; margin-bottom: 1.75rem; padding-bottom: 1.75rem; border-bottom: 1px solid #e2e8f0; }
+        .talk-item:last-child { border-bottom: none; }
+        .talk-date { width: 110px; flex-shrink: 0; color: var(--dark-bg); font-weight: 700; }
+        .talk-date small { display: block; color: #64748b; font-size: 0.8rem; font-weight: 500; }
+        .talk-item h3 { font-size: 1.1rem; color: var(--dark-bg); margin-bottom: 2px; }
+        .talk-item h4 { color: var(--primary); font-size: 0.95rem; margin-bottom: 0.5rem; font-weight: 600; }
+
         /* Footer */
         footer { background: var(--dark-bg); color: #94a3b8; text-align: center; padding: 3rem 1rem; }
         footer a { color: white; }
@@ -137,6 +149,9 @@
             .map-overlay { top: auto; bottom: 0; right: 0; left: 0; width: 100%; border-radius: 0; padding: 1rem; }
             .timeline-item { flex-direction: column; }
             .project-card { flex-direction: column; padding: 1.25rem; }
+            .talk-photos { grid-template-columns: 1fr; }
+            .talk-photos img { height: 240px; }
+            .talk-item { flex-direction: column; gap: 6px; }
             .nav-links { display: none; }
         }
     </style>
@@ -148,6 +163,7 @@
         <div class="nav-links">
             <a href="#map-section">Global Journey</a>
             <a href="#projects">Projects</a>
+            <a href="#speaking">Speaking</a>
             <a href="#experience">Experience</a>
             <a href="mailto:fionacuicareer@gmail.com" class="btn">Contact</a>
         </div>
@@ -238,12 +254,55 @@
         </article>
     </section>
 
+    <section id="speaking">
+        <h2 class="section-title">Speaking</h2>
+        <p class="section-intro">I share what hiring looks like from the recruiter's side of the table with job seekers and scientists, usually to audiences of 100+.</p>
+
+        <div class="talk-photos">
+            <figure>
+                <img src="images/sapa-2023-panel.jpg" alt="Fiona Cui speaking on a panel at the SAPA Career Development Workshop 2023" loading="lazy">
+                <figcaption>Panelist at the SAPA Career Development Workshop, 2023</figcaption>
+            </figure>
+            <figure>
+                <img src="images/sapa-2023-group.jpg" alt="Fiona Cui with fellow panelists and moderators at the SAPA Career Development Workshop 2023" loading="lazy">
+                <figcaption>With the session's panelists and moderators</figcaption>
+            </figure>
+        </div>
+
+        <div class="talk-list">
+            <article class="talk-item">
+                <span class="talk-date">Oct 2024<small>Online</small></span>
+                <div>
+                    <h3>Job Searching and Interviewing in North America</h3>
+                    <h4>北美华人大学联合会 · Online career talk</h4>
+                    <p>Shared how candidates can stand out in North American interviews, from a recruiter's point of view.</p>
+                </div>
+            </article>
+            <article class="talk-item">
+                <span class="talk-date">Mar 2024<small>Panelist</small></span>
+                <div>
+                    <h3>Career Catalyst: Igniting Exploration, Interviewing, and Transition Triumphs</h3>
+                    <h4>SAPA Career Development Workshop 2024</h4>
+                    <p>Coached scientists on answering "Tell me about yourself" in under three minutes, and on using small talk to set a relaxed, equal tone with the interviewer.</p>
+                </div>
+            </article>
+            <article class="talk-item">
+                <span class="talk-date">Apr 2023<small>Speaker &amp; panelist</small></span>
+                <div>
+                    <h3>Career Development Panel</h3>
+                    <h4>SAPA Career Development Workshop 2023</h4>
+                    <p>Spoke on hiring and career growth as Talent Acquisition Partner at Cellarity (Flagship Pioneering).</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
     <section id="experience">
         <h2 class="section-title">Professional Experience</h2>
 
         <!-- Huawei -->
         <div class="timeline-item">
-            <img src="https://logo.clearbit.com/huawei.com" class="company-logo">
+            <img src="images/logo-huawei.png" alt="Huawei logo" class="company-logo">
             <div class="job-content">
                 <h3>Executive Searching Recruiter</h3>
                 <h4>Huawei Canada</h4>
@@ -265,7 +324,7 @@
 
         <!-- Cellarity -->
         <div class="timeline-item">
-            <img src="https://logo.clearbit.com/cellarity.com" class="company-logo">
+            <img src="images/logo-cellarity.png" alt="Cellarity logo" class="company-logo">
             <div class="job-content">
                 <h3>Talent Acquisition Manager</h3>
                 <h4>Cellarity Inc (Flagship Pioneering)</h4>
@@ -287,7 +346,7 @@
 
         <!-- Tiens -->
         <div class="timeline-item">
-            <img src="https://logo.clearbit.com/tiens.com" class="company-logo">
+            <img src="images/logo-tiens.png" alt="Tiens Group logo" class="company-logo">
             <div class="job-content">
                 <h3>HR Supervisor (APAC)</h3>
                 <h4>Tiens Group</h4>
