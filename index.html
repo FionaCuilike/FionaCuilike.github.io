@@ -28,6 +28,7 @@
         .logo { font-weight: 700; font-size: 1.2rem; color: var(--dark-bg); }
         .nav-links a { text-decoration: none; color: #475569; margin-left: 2rem; font-weight: 500; transition: 0.3s; }
         .nav-links a:hover { color: var(--primary); }
+        .nav-links a.btn, .nav-links a.btn:hover { color: white; }
 
         /* Hero 个人主页头图 */
         .hero { text-align: center; padding: 4rem 1rem; background: white; border-bottom: 1px solid #e2e8f0; }
@@ -110,6 +111,24 @@
         .job-content h4 { color: var(--primary); font-size: 1rem; margin-bottom: 0.5rem; font-weight: 600; }
         .job-meta { font-size: 0.85rem; color: #64748b; margin-bottom: 0.8rem; display: block; font-weight: 500; }
         
+        /* 项目区域 */
+        .section-intro { max-width: 640px; margin: -1.2rem auto 2.5rem; text-align: center; color: #64748b; }
+        .project-card { display: flex; gap: 20px; margin-bottom: 1.5rem; padding: 1.75rem; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.04); }
+        .project-icon { display: grid; place-items: center; width: 60px; height: 60px; flex-shrink: 0; border-radius: 8px; color: var(--primary); background: #eff6ff; font-size: 1.5rem; }
+        .project-content { min-width: 0; }
+        .project-content h3 { font-size: 1.2rem; color: var(--dark-bg); margin-bottom: 2px; }
+        .project-content h4 { color: var(--primary); font-size: 1rem; margin-bottom: 0.8rem; font-weight: 600; }
+        .project-content ul { padding-left: 1.1rem; margin-bottom: 1rem; }
+        .project-content li { margin-bottom: 0.35rem; }
+        .project-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1rem; }
+        .project-tags span { padding: 3px 10px; border-radius: 50px; background: #f1f5f9; color: #475569; font-size: 0.8rem; font-weight: 500; }
+        .project-links { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+        .project-links .btn-outline { margin-left: 0; padding: calc(0.8rem - 2px) 1.5rem; }
+        .project-text-link { color: var(--primary); font-weight: 600; text-decoration: none; }
+        .project-text-link:hover { text-decoration: underline; }
+        .project-note { color: #64748b; font-size: 0.9rem; }
+        .project-note i { margin-right: 4px; }
+
         /* Footer */
         footer { background: var(--dark-bg); color: #94a3b8; text-align: center; padding: 3rem 1rem; }
         footer a { color: white; }
@@ -117,6 +136,7 @@
         @media (max-width: 768px) {
             .map-overlay { top: auto; bottom: 0; right: 0; left: 0; width: 100%; border-radius: 0; padding: 1rem; }
             .timeline-item { flex-direction: column; }
+            .project-card { flex-direction: column; padding: 1.25rem; }
             .nav-links { display: none; }
         }
     </style>
@@ -127,6 +147,7 @@
         <div class="logo">Fiona Cui</div>
         <div class="nav-links">
             <a href="#map-section">Global Journey</a>
+            <a href="#projects">Projects</a>
             <a href="#experience">Experience</a>
             <a href="mailto:fionacuicareer@gmail.com" class="btn">Contact</a>
         </div>
@@ -159,6 +180,63 @@
             <button class="replay-btn" onclick="animateJourney()"><i class="fa-solid fa-rotate-right"></i> Replay Journey</button>
         </div>
     </div>
+
+    <section id="projects">
+        <h2 class="section-title">Recruiting Tools I've Built</h2>
+        <p class="section-intro">I build my own sourcing tools to find engineers and researchers by the work they publish, not by job-title keywords.</p>
+
+        <!-- Contributor Atlas -->
+        <article class="project-card">
+            <div class="project-icon"><i class="fa-solid fa-diagram-project"></i></div>
+            <div class="project-content">
+                <h3>Contributor Atlas</h3>
+                <h4>Finds AI engineers through the open-source code they ship</h4>
+                <ul>
+                    <li>Turns a hiring brief into searches across all of GitHub, then ranks the matching communities by how many people contribute.</li>
+                    <li>Ranks people across several communities at once (for example vLLM, SGLang and Triton) and shows who is still committing.</li>
+                    <li>Profiles each person's merged pull requests: share of core code, tests and docs, the directories they work in, and technical tags that each link to the supporting PRs.</li>
+                    <li>Runs locally on the GitHub API and a local language model, with no paid AI services.</li>
+                </ul>
+                <div class="project-tags"><span>React</span><span>TypeScript</span><span>FastAPI</span><span>GitHub GraphQL</span><span>Ollama</span></div>
+                <div class="project-links">
+                    <a href="contributor-atlas/" class="btn">Try the demo</a>
+                    <a href="https://github.com/FionaCuilike/Contributor-Atlas" target="_blank" rel="noopener" class="btn btn-outline"><i class="fa-brands fa-github"></i> Code</a>
+                    <a href="contributor-atlas/case-study.html" class="project-text-link">Read the case study →</a>
+                </div>
+            </div>
+        </article>
+
+        <!-- Conference Talent Automation -->
+        <article class="project-card">
+            <div class="project-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+            <div class="project-content">
+                <h3>Research Talent Workbench</h3>
+                <h4>Builds a searchable pool of ML researchers from conference papers and citations</h4>
+                <ul>
+                    <li>Collects authors from ML conference papers (ICML, OpenReview) and expands the pool through Semantic Scholar citations and CSRankings faculty data.</li>
+                    <li>Verifies each person's GitHub identity and enriches profiles from personal homepages, keeping the source page for every field.</li>
+                    <li>Maps co-author networks, and lets AI assistants query the pool through an MCP server that hides contact details by default.</li>
+                </ul>
+                <div class="project-tags"><span>Python</span><span>Flask</span><span>SQLite</span><span>Semantic Scholar API</span><span>MCP</span></div>
+                <p class="project-note"><i class="fa-solid fa-lock"></i> Private repository: it holds candidate data.</p>
+            </div>
+        </article>
+
+        <!-- Scheduler -->
+        <article class="project-card">
+            <div class="project-icon"><i class="fa-regular fa-calendar-check"></i></div>
+            <div class="project-content">
+                <h3>Interview Slot Finder</h3>
+                <h4>Collects candidate and interviewer availability and ranks the best interview times</h4>
+                <ul>
+                    <li>Candidates and interviewers mark when they're free on a weekly calendar from a shared link, with no accounts.</li>
+                    <li>Ranks the slots that work for everyone across time zones; each person sees times in their own zone.</li>
+                    <li>Saves responses so links keep working across browsers and restarts.</li>
+                </ul>
+                <div class="project-tags"><span>Python</span><span>Streamlit</span><span>SQLite</span></div>
+            </div>
+        </article>
+    </section>
 
     <section id="experience">
         <h2 class="section-title">Professional Experience</h2>
