@@ -5,29 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fiona Cui | Global Technical Recruiter</title>
     <meta name="description" content="Fiona Cui, global technical and science recruiter for AI/ML, LLM and engineering roles, connecting talent from Asia to North America.">
+    <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <meta name="theme-color" content="#14213d">
+    <!-- 分享预览卡片 (LinkedIn / 微信 / X) -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://fionacuilike.github.io/">
+    <meta property="og:title" content="Fiona Cui | Global Technical Recruiter">
+    <meta property="og:description" content="AI/ML, LLM and engineering hiring across global markets. Connecting talent from Asia to North America.">
+    <meta property="og:image" content="https://fionacuilike.github.io/images/og-card.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
 
     <!-- Leaflet CSS (地图引擎) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <!-- Font Awesome (图标库) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts (字体) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* 版式：左对齐的单栏阅读流，最宽 1080px；各节用小标签 + 标题开头，卡片只用于项目 */
+        /* 版式：左对齐的单栏阅读流，最宽 1080px；白色与浅灰色条带交替分隔各节，卡片只用于项目
+           配色：深海军蓝 + 地图轨迹的金色；标题用 Fraunces 衬线体，正文用 Inter */
         :root {
-            --primary: #3b82f6;      /* 科技蓝 */
-            --primary-dark: #2563eb;
-            --primary-soft: #eff6ff;
-            --gold: #fbbf24;         /* 轨迹金 */
-            --ink: #0f172a;          /* 标题 */
-            --text: #334155;         /* 正文 */
-            --muted: #64748b;        /* 次要文字 */
-            --line: #e2e8f0;         /* 分隔线 */
+            --primary: #14213d;      /* 海军蓝：按钮、标题、链接 */
+            --primary-dark: #0b1630;
+            --primary-soft: #eef1f7; /* 浅海军蓝底 */
+            --accent: #3d5a8a;       /* 公司名、副标题 */
+            --gold: #f2b544;         /* 轨迹金：深色底上的强调 */
+            --gold-ink: #8f5f00;     /* 浅色底上可读的金色文字 */
+            --gold-soft: #fbf1db;
+            --ink: #101828;          /* 标题 */
+            --text: #344054;         /* 正文 */
+            --muted: #667085;        /* 次要文字 */
+            --line: #e3e7ee;         /* 分隔线 */
             --surface: #ffffff;
-            --page: #f8fafc;
-            --dark-bg: #0f172a;
+            --page: #f4f6fa;         /* 浅灰条带 */
+            --dark-bg: #14213d;
             --radius: 14px;
+            --display: 'Fraunces', Georgia, 'Times New Roman', serif;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -42,10 +59,11 @@
         /* 导航栏 */
         nav { position: sticky; top: 0; z-index: 1000; background: rgba(255,255,255,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
         nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 64px; }
-        .logo { font-weight: 800; font-size: 1.1rem; color: var(--ink); text-decoration: none; white-space: nowrap; }
+        .logo { font-family: var(--display); font-weight: 700; font-size: 1.25rem; color: var(--ink); text-decoration: none; white-space: nowrap; }
         .nav-links { display: flex; align-items: center; gap: 4px; }
         .nav-links a { padding: 8px 12px; border-radius: 8px; color: #475569; font-size: 0.95rem; font-weight: 500; text-decoration: none; white-space: nowrap; transition: background 0.2s, color 0.2s; }
         .nav-links a:hover { color: var(--primary); background: var(--primary-soft); }
+        .logo span { color: var(--gold-ink); }
         .nav-links a.nav-cta { margin-left: 8px; color: white; background: var(--primary); }
         .nav-links a.nav-cta:hover { color: white; background: var(--primary-dark); }
 
@@ -54,29 +72,33 @@
         .btn:hover { background: var(--primary-dark); border-color: var(--primary-dark); transform: translateY(-2px); }
         .btn-outline { color: var(--primary); background: transparent; }
         .btn-outline:hover { color: white; }
-        .text-link { color: var(--primary); font-weight: 600; text-decoration: none; }
-        .text-link:hover { text-decoration: underline; }
+        .text-link { color: var(--primary); font-weight: 600; text-decoration: underline; text-decoration-color: var(--gold); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+        .text-link:hover { text-decoration-color: var(--primary); }
 
         /* 第一屏 */
         .hero { background: var(--surface); border-bottom: 1px solid var(--line); }
         .hero .wrap { display: grid; grid-template-columns: 1.35fr 1fr; align-items: center; gap: 56px; padding-top: 72px; padding-bottom: 72px; }
-        .eyebrow { display: block; margin-bottom: 0.75rem; color: var(--primary); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
-        .hero h1 { margin-bottom: 0.5rem; color: var(--ink); font-size: clamp(2.5rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.05; letter-spacing: -0.03em; }
+        .eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem; color: var(--gold-ink); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+        .eyebrow::before { content: ""; width: 22px; height: 2px; background: var(--gold); }
+        .hero h1 { margin-bottom: 0.5rem; color: var(--ink); font-family: var(--display); font-size: clamp(2.75rem, 5.5vw, 4rem); font-weight: 700; line-height: 1.02; letter-spacing: -0.02em; }
         .hero .role { margin-bottom: 1.25rem; color: var(--ink); font-size: 1.25rem; font-weight: 600; }
         .hero .lede { max-width: 34rem; margin-bottom: 1.75rem; color: var(--muted); font-size: 1.1rem; }
         .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 2.25rem; }
-        .facts { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; gap: 32px; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+        .facts { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; gap: 24px; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+        .facts div { padding-left: 14px; border-left: 2px solid var(--gold); }
         .facts dt { color: var(--muted); font-size: 0.8rem; font-weight: 500; }
-        .facts dd { color: var(--ink); font-size: 1.05rem; font-weight: 700; }
-        .hero-photo { position: relative; justify-self: center; }
-        .hero-photo img { display: block; width: min(340px, 100%); aspect-ratio: 1; object-fit: cover; border: 6px solid white; border-radius: 50%; box-shadow: 0 20px 45px rgba(59, 130, 246, 0.22); }
+        .facts dd { color: var(--ink); font-size: 1.05rem; font-weight: 700; white-space: nowrap; }
+        .hero-photo { position: relative; justify-self: center; width: min(340px, 100%); }
+        .hero-photo::before { content: ""; position: absolute; inset: -14px; border: 2px solid var(--gold); border-radius: 50%; opacity: 0.55; }
+        .hero-photo img { position: relative; display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border: 6px solid white; border-radius: 50%; box-shadow: 0 24px 50px rgba(20, 33, 61, 0.22); }
         .hero-photo .location { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 50px; color: var(--ink); background: white; box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12); font-size: 0.9rem; font-weight: 600; white-space: nowrap; }
-        .hero-photo .location i { color: var(--primary); }
+        .hero-photo .location i { color: var(--gold-ink); }
 
         /* 通用小节 */
-        section { padding-top: 88px; padding-bottom: 0; }
+        .band { padding-top: 88px; padding-bottom: 88px; }
+        .band-white { background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
         .section-head { max-width: 640px; margin-bottom: 2.5rem; }
-        .section-head h2 { margin-bottom: 0.6rem; color: var(--ink); font-size: clamp(1.75rem, 3vw, 2.25rem); font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; text-wrap: balance; }
+        .section-head h2 { margin-bottom: 0.6rem; color: var(--ink); font-family: var(--display); font-size: clamp(1.85rem, 3.2vw, 2.5rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.015em; text-wrap: balance; }
         .section-head p { color: var(--muted); font-size: 1.05rem; }
 
         /* 工作经历：日期在左，内容在右 */
@@ -86,29 +108,37 @@
         .job-date small { display: block; color: var(--muted); font-size: 0.85rem; font-weight: 500; }
         .company-logo { width: 56px; height: 56px; padding: 6px; object-fit: contain; border: 1px solid var(--line); border-radius: 12px; background: white; }
         .job h3 { color: var(--ink); font-size: 1.15rem; font-weight: 700; }
-        .job h4 { margin-bottom: 0.4rem; color: var(--primary); font-size: 1rem; font-weight: 600; }
+        .job h4 { margin-bottom: 0.4rem; color: var(--accent); font-size: 1rem; font-weight: 600; }
         .job p { max-width: 40rem; }
 
         /* 项目 */
         .project-feature { display: grid; grid-template-columns: 1.2fr 1fr; overflow: hidden; margin-bottom: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05); }
         .project-feature .project-body { padding: 36px; }
         .project-feature aside { display: flex; flex-direction: column; justify-content: center; gap: 18px; padding: 36px; color: #cbd5e1; background: var(--dark-bg); }
+        .project-shot { grid-column: 1 / -1; padding: 28px 36px 36px; background: linear-gradient(180deg, var(--primary-soft), var(--surface)); border-top: 1px solid var(--line); }
+        .project-shot a { display: block; overflow: hidden; text-decoration: none; border: 1px solid var(--line); border-radius: 10px; background: white; box-shadow: 0 18px 40px rgba(20, 33, 61, 0.14); transition: transform 0.2s, box-shadow 0.2s; }
+        .project-shot a:hover { transform: translateY(-3px); box-shadow: 0 24px 50px rgba(20, 33, 61, 0.18); }
+        .browser-bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: #f7f8fb; }
+        .browser-bar i { width: 10px; height: 10px; border-radius: 50%; background: #d5dae3; }
+        .browser-bar span { margin-left: 10px; color: var(--muted); font-size: 0.8rem; }
+        .project-shot img { display: block; width: 100%; height: auto; }
+        .project-shot figcaption { margin-top: 10px; color: var(--muted); font-size: 0.85rem; }
         .project-feature aside h4 { color: var(--gold); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; }
         .project-feature aside ol { display: grid; gap: 14px; padding-left: 1.2rem; }
         .project-feature aside li::marker { color: var(--gold); font-weight: 700; }
         .project-feature aside strong { color: white; }
-        .badge { display: inline-block; margin-bottom: 0.75rem; padding: 4px 10px; border-radius: 50px; color: var(--primary); background: var(--primary-soft); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
-        .project-body h3 { color: var(--ink); font-size: 1.5rem; font-weight: 800; letter-spacing: -0.01em; }
-        .project-body .tagline { margin-bottom: 1rem; color: var(--primary); font-weight: 600; }
+        .badge { display: inline-block; margin-bottom: 0.75rem; padding: 4px 10px; border-radius: 50px; color: var(--gold-ink); background: var(--gold-soft); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+        .project-body h3 { color: var(--ink); font-family: var(--display); font-size: 1.75rem; font-weight: 700; letter-spacing: -0.01em; }
+        .project-body .tagline { margin-bottom: 1rem; color: var(--accent); font-weight: 600; }
         .project-body p { margin-bottom: 1rem; }
         .project-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 1.5rem; }
         .project-tags span { padding: 3px 10px; border-radius: 50px; color: #475569; background: #f1f5f9; font-size: 0.8rem; font-weight: 500; }
         .project-links { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
         .project-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .project-card { display: flex; flex-direction: column; padding: 28px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
-        .project-card .project-icon { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 1rem; border-radius: 10px; color: var(--primary); background: var(--primary-soft); font-size: 1.2rem; }
-        .project-card h3 { color: var(--ink); font-size: 1.15rem; font-weight: 700; }
-        .project-card .tagline { margin-bottom: 0.75rem; color: var(--primary); font-size: 0.95rem; font-weight: 600; }
+        .project-card .project-icon { display: grid; place-items: center; width: 44px; height: 44px; margin-bottom: 1rem; border-radius: 10px; color: var(--gold-ink); background: var(--gold-soft); font-size: 1.2rem; }
+        .project-card h3 { color: var(--ink); font-family: var(--display); font-size: 1.35rem; font-weight: 700; }
+        .project-card .tagline { margin-bottom: 0.75rem; color: var(--accent); font-size: 0.95rem; font-weight: 600; }
         .project-card p { margin-bottom: 1rem; }
         .project-card .project-tags { margin-top: auto; margin-bottom: 0.75rem; }
         .project-note { color: var(--muted); font-size: 0.875rem; }
@@ -135,13 +165,15 @@
         .talk-date { color: var(--ink); font-size: 0.95rem; font-weight: 700; font-variant-numeric: tabular-nums; }
         .talk-date small { display: block; color: var(--muted); font-size: 0.8rem; font-weight: 500; }
         .talk-item h3 { color: var(--ink); font-size: 1.05rem; font-weight: 700; line-height: 1.35; }
-        .talk-item h4 { margin: 2px 0 0.4rem; color: var(--primary); font-size: 0.9rem; font-weight: 600; }
+        .talk-item h4 { margin: 2px 0 0.4rem; color: var(--accent); font-size: 0.9rem; font-weight: 600; }
         .talk-item p { font-size: 0.95rem; }
 
         /* 联系 + 页脚 */
-        .contact { margin-top: 96px; color: #cbd5e1; background: var(--dark-bg); }
+        .contact { color: #cbd5e1; background: var(--dark-bg); }
         .contact .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; padding-top: 64px; padding-bottom: 64px; }
-        .contact h2 { margin-bottom: 0.4rem; color: white; font-size: clamp(1.75rem, 3vw, 2.25rem); font-weight: 800; letter-spacing: -0.02em; }
+        .contact h2 { margin-bottom: 0.4rem; color: white; font-family: var(--display); font-size: clamp(1.85rem, 3.2vw, 2.5rem); font-weight: 700; letter-spacing: -0.015em; }
+        .contact .btn { color: var(--primary); background: var(--gold); border-color: var(--gold); }
+        .contact .btn:hover { background: #ffc85c; border-color: #ffc85c; }
         .contact .email { color: white; font-weight: 600; user-select: all; }
         .contact .btn-outline { color: white; border-color: rgba(255,255,255,0.4); }
         .contact .btn-outline:hover { border-color: white; background: rgba(255,255,255,0.1); }
@@ -150,7 +182,7 @@
         @media (max-width: 900px) {
             .hero .wrap { grid-template-columns: 1fr; gap: 40px; padding-top: 48px; padding-bottom: 56px; }
             .hero-photo { grid-row: 1; }
-            .hero-photo img { width: 220px; }
+            .hero-photo { width: 220px; }
             .project-feature, .project-grid, .community { grid-template-columns: 1fr; }
             .job { grid-template-columns: 56px 1fr; }
             .job-date { grid-column: 1 / -1; }
@@ -162,9 +194,11 @@
             .nav-links::-webkit-scrollbar { display: none; }
             .nav-links a { padding: 6px 10px; font-size: 0.9rem; }
             html { scroll-padding-top: 104px; }
-            .facts { grid-template-columns: 1fr 1fr; gap: 16px 24px; }
-            section { padding-top: 64px; }
+            .facts { grid-template-columns: 1fr 1fr; gap: 16px 20px; }
+            .facts dd { white-space: normal; }
+            .band { padding-top: 64px; padding-bottom: 64px; }
             .project-feature .project-body, .project-feature aside, .project-card { padding: 24px; }
+            .project-shot { padding: 20px 16px 24px; }
             #map { height: 380px; }
             .map-overlay { top: auto; bottom: 0; left: 0; right: 0; width: auto; border-radius: 0; padding: 1rem; }
             .talk-photos { grid-template-columns: 1fr; }
@@ -182,7 +216,7 @@
 
     <nav aria-label="Main">
         <div class="wrap">
-            <a class="logo" href="#top">Fiona Cui</a>
+            <a class="logo" href="#top">Fiona Cui<span>.</span></a>
             <div class="nav-links">
                 <a href="#experience">Experience</a>
                 <a href="#projects">Projects</a>
@@ -218,7 +252,7 @@
     </header>
 
     <main>
-        <section id="experience" class="wrap">
+        <section id="experience" class="band"><div class="wrap">
             <div class="section-head">
                 <span class="eyebrow">Experience</span>
                 <h2>Hiring across AI, biotech, and global markets</h2>
@@ -270,9 +304,9 @@
                     </div>
                 </article>
             </div>
-        </section>
+        </div></section>
 
-        <section id="projects" class="wrap">
+        <section id="projects" class="band band-white"><div class="wrap">
             <div class="section-head">
                 <span class="eyebrow">Recruiting tools I've built</span>
                 <h2>I find people by the work they publish, not by job-title keywords</h2>
@@ -300,6 +334,13 @@
                         <li><strong>Profile the work.</strong> Shares of core code, tests and docs, and technical tags that each link to the supporting pull requests.</li>
                     </ol>
                 </aside>
+                <figure class="project-shot">
+                    <a href="contributor-atlas/" aria-label="Open the Contributor Atlas demo">
+                        <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>Contributor Atlas · cross-community ranking</span></div>
+                        <img src="images/contributor-atlas-ranking.jpg" width="1600" height="955" loading="lazy" alt="Contributor Atlas ranking 1,263 contributors across vLLM, Triton and SGLang, with 50 active in more than one community">
+                    </a>
+                    <figcaption>Real public data: 1,263 contributors across vLLM, Triton and SGLang, 50 of them active in more than one.</figcaption>
+                </figure>
             </article>
 
             <div class="project-grid">
@@ -319,9 +360,9 @@
                     <div class="project-tags"><span>Python</span><span>Streamlit</span><span>SQLite</span></div>
                 </article>
             </div>
-        </section>
+        </div></section>
 
-        <section id="journey" class="wrap">
+        <section id="journey" class="band"><div class="wrap">
             <div class="section-head">
                 <span class="eyebrow">Global journey</span>
                 <h2>A 10-year career footprint from Wuhan to Vancouver</h2>
@@ -336,9 +377,9 @@
                     <button class="replay-btn" onclick="animateJourney()"><i class="fa-solid fa-rotate-right"></i> Replay Journey</button>
                 </div>
             </div>
-        </section>
+        </div></section>
 
-        <section id="community" class="wrap">
+        <section id="community" class="band band-white"><div class="wrap">
             <div class="section-head">
                 <span class="eyebrow">Giving back</span>
                 <h2>Helping job seekers and scientists see hiring from the recruiter's side</h2>
@@ -382,7 +423,7 @@
                     </article>
                 </div>
             </div>
-        </section>
+        </div></section>
     </main>
 
     <section class="contact" id="contact" aria-label="Contact">
