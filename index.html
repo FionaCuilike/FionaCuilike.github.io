@@ -17,6 +17,7 @@
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
+    <script>document.documentElement.classList.add('js');</script>
 
     <!-- Leaflet CSS (地图引擎) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -24,12 +25,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Mrs+Saint+Delafield&display=swap" rel="stylesheet">
 
     <style>
-        /* 版式：编辑风格的单栏长页。暖米灰底 + 深绿单一强调色；超大衬线标题，描边胶囊标签；
-           第一屏是滚动的大字名字 + 黑白照片 + 手写签名 + 倾斜的信息标签 */
+        /* 版式：编辑风格的单栏长页。暖米灰底 + 深绿单一强调色；超大衬线标题，描边胶囊标签。
+           动效：第一屏固定滚动（全屏黑白照片 → 相框照片 + 大字名字 + 签名），鼠标聚光灯上色，
+           点阵随鼠标变绿，标签漂浮视差，横幅随滚动速度倾斜，3D 人才网络，数字计数，经历横向滑动 */
         :root {
             --bg: #f2f3ef;          /* 暖米灰底 */
             --paper: #fafaf7;       /* 卡片、框 */
-            --ink: #161816;         /* 标题、正文主色 */
+            --ink: #161816;         /* 标题 */
             --text: #3a3d39;        /* 正文 */
             --muted: #6f736d;       /* 次要文字 */
             --line: #d9dbd3;        /* 分隔线、描边 */
@@ -40,99 +42,137 @@
             --serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
             --sans: 'Instrument Sans', -apple-system, 'Segoe UI', sans-serif;
             --script: 'Mrs Saint Delafield', 'Snell Roundhand', cursive;
-            --gutter: max(24px, env(safe-area-inset-left, 0px));
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { scroll-behavior: smooth; scroll-padding-top: 88px; }
-        html, body { overflow-x: clip; }  /* 倾斜的横幅和滚动大字会伸出屏幕，裁掉而不产生横向滚动 */
+        html, body { overflow-x: clip; }  /* 倾斜横幅和滚动大字会伸出屏幕，裁掉而不产生横向滚动 */
         body { font-family: var(--sans); font-size: 17px; line-height: 1.6; color: var(--text); background: var(--bg); }
         a { color: inherit; }
         img { max-width: 100%; }
         a:focus-visible, button:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; border-radius: 8px; }
         .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-
-        .wrap { max-width: 1160px; margin: 0 auto; padding-left: var(--gutter); padding-right: max(24px, env(safe-area-inset-right, 0px)); }
+        .wrap { max-width: 1160px; margin: 0 auto; padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px)); }
 
         /* ---------- 导航 ---------- */
         nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding-top: env(safe-area-inset-top, 0px); transition: background 0.3s; }
         nav.scrolled { background: rgba(242, 243, 239, 0.88); backdrop-filter: blur(12px); }
         nav .inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 76px; padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px)); }
         .monogram { display: grid; place-items: center; flex: none; width: 46px; height: 46px; border: 1px solid var(--line); border-radius: 50%; color: var(--green); background: var(--paper); font-family: var(--serif); font-size: 1.3rem; text-decoration: none; }
-        .nav-pill { display: flex; gap: 2px; padding: 4px; border: 1px solid var(--line); border-radius: 50px; background: rgba(250, 250, 247, 0.75); backdrop-filter: blur(8px); }
-        .nav-pill a { padding: 7px 14px; border-radius: 50px; color: var(--ink); font-size: 0.78rem; font-weight: 500; letter-spacing: 0.08em; text-decoration: none; text-transform: uppercase; white-space: nowrap; transition: background 0.2s; }
-        .nav-pill a:hover, .nav-pill a.active { background: #e3e5de; }
+        .nav-pill { display: flex; gap: 2px; padding: 4px; border: 1px solid var(--line); border-radius: 50px; background: rgba(250, 250, 247, 0.8); backdrop-filter: blur(8px); }
+        .nav-pill a { padding: 7px 14px; border-radius: 50px; color: var(--ink); font-size: 0.78rem; font-weight: 500; letter-spacing: 0.08em; text-decoration: none; text-transform: uppercase; white-space: nowrap; transition: background 0.25s, box-shadow 0.25s; }
+        .nav-pill a:hover { background: #e7e9e2; }
+        .nav-pill a.active { background: #e3e5de; box-shadow: inset 0 1px 3px rgba(0,0,0,0.12); }
         .nav-cta { display: flex; gap: 8px; }
         .progress { position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--green); }
 
         /* ---------- 按钮 ---------- */
         .btn { display: inline-flex; align-items: center; gap: 8px; padding: 0.8rem 1.4rem; border: 1px solid var(--green); border-radius: 50px; color: white; background: var(--green); font-family: var(--sans); font-size: 0.95rem; font-weight: 600; text-decoration: none; white-space: nowrap; transition: background 0.2s, transform 0.2s; }
         .btn:hover { background: var(--green-dark); transform: translateY(-1px); }
-        .btn.ghost { color: var(--ink); background: transparent; border-color: #b9bdb3; }
-        .btn.ghost:hover { background: rgba(0,0,0,0.04); }
+        .btn.ghost { color: var(--ink); background: rgba(250, 250, 247, 0.6); border-color: #b9bdb3; }
+        .btn.ghost:hover { background: rgba(250, 250, 247, 0.95); }
         .btn.small { padding: 0.5rem 1rem; font-size: 0.85rem; }
-        .btn-group { display: inline-flex; gap: 6px; padding: 6px; border: 1px solid var(--line); border-radius: 50px; background: rgba(250, 250, 247, 0.85); backdrop-filter: blur(8px); }
+        .btn-group { display: inline-flex; gap: 6px; padding: 6px; border: 1px solid rgba(217, 219, 211, 0.9); border-radius: 50px; background: rgba(250, 250, 247, 0.55); backdrop-filter: blur(10px); }
 
-        /* ---------- 第一屏 ---------- */
-        .hero { position: relative; min-height: max(720px, 100svh); display: grid; place-items: center; overflow: hidden; padding: 120px 0 64px;
-            background-image: radial-gradient(rgba(46, 91, 65, 0.16) 1px, transparent 1.4px); background-size: 22px 22px; }
-        .status { position: absolute; top: 96px; left: 50%; z-index: 4; transform: translateX(-50%); padding: 8px 18px; border: 1px solid var(--line); border-radius: 50px; color: var(--ink); background: rgba(250, 250, 247, 0.9); font-size: 0.85rem; white-space: nowrap; }
-        .status i { display: inline-block; width: 7px; height: 7px; margin-right: 8px; border-radius: 50%; background: #3f9a63; box-shadow: 0 0 0 4px rgba(63, 154, 99, 0.18); vertical-align: 1px; }
-        .marquee { position: absolute; left: 0; right: 0; display: flex; overflow: hidden; pointer-events: none; user-select: none; }
+        /* ---------- 第一屏：固定舞台，滚动驱动 ---------- */
+        .hero-pin { position: relative; height: 240vh; }
+        .stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: var(--bg); }
+        .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+        #dots { z-index: 4; }
+        #color { z-index: 3; }
+        .marquee { position: absolute; left: 0; right: 0; z-index: 1; display: flex; overflow: hidden; pointer-events: none; user-select: none; opacity: var(--name, 1); }
         .marquee .track { display: flex; flex: none; align-items: center; gap: 0.35em; padding-right: 0.35em; font-family: var(--serif); font-size: clamp(5rem, 13vw, 11rem); line-height: 1; white-space: nowrap; color: var(--ink); animation: slide 40s linear infinite; }
         .marquee .outline { color: transparent; -webkit-text-stroke: 1.2px var(--ink); }
         .marquee .dot { color: var(--green); font-size: 0.22em; }
-        .marquee.row-1 { top: calc(50% - 0.92 * clamp(5rem, 13vw, 11rem)); }
-        .marquee.row-2 { top: calc(50% + 0.04 * clamp(5rem, 13vw, 11rem)); }
+        .marquee.row-1 { top: calc(50% - 0.9 * clamp(5rem, 13vw, 11rem)); }
+        .marquee.row-2 { top: calc(50% + 0.06 * clamp(5rem, 13vw, 11rem)); }
         .marquee.row-2 .track { animation-direction: reverse; animation-duration: 46s; }
         @keyframes slide { to { transform: translateX(-100%); } }
 
-        .portrait { position: relative; z-index: 2; width: min(360px, 72vw); }
-        .portrait .frame { overflow: hidden; aspect-ratio: 4 / 5; border-radius: 26px; background: #ddd; box-shadow: 0 30px 70px rgba(22, 24, 22, 0.25); }
-        .portrait img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 12%; filter: grayscale(1) contrast(1.06); }
-        .signature { position: absolute; left: 50%; bottom: 6%; transform: translateX(-46%) rotate(-8deg); color: var(--green); font-family: var(--script); font-size: clamp(5.5rem, 12vw, 8.5rem); line-height: 1; white-space: nowrap; pointer-events: none; text-shadow: 0 2px 18px rgba(250, 250, 247, 0.6); }
-        .chip { position: absolute; z-index: 3; padding: 12px 18px; border-radius: 16px; color: var(--ink); background: var(--paper); box-shadow: 0 14px 34px rgba(22, 24, 22, 0.14); line-height: 1.25; }
+        .photo { position: absolute; z-index: 2; overflow: hidden; left: 0; top: 0; width: 100%; height: 100%; background: #d9d9d6; will-change: left, top, width, height; }
+        .photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; filter: grayscale(1) contrast(1.05); }
+        .photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(242,243,239,0.35), transparent 22%, transparent 70%, rgba(22,24,22,0.25)); opacity: var(--veil, 1); pointer-events: none; }
+        .signature { position: absolute; z-index: 5; left: 50%; top: 50%; color: var(--green); font-family: var(--script); font-size: clamp(6rem, 13vw, 10rem); line-height: 1; white-space: nowrap; pointer-events: none; transform: translate(-46%, 8%) rotate(-8deg); text-shadow: 0 2px 18px rgba(250, 250, 247, 0.55); clip-path: inset(-20% calc(var(--sig, 1) * -10% + (1 - var(--sig, 1)) * 100%) -20% -10%); }
+
+        .chips { position: absolute; inset: 0; z-index: 6; pointer-events: none; opacity: var(--chips, 1); }
+        .chip { position: absolute; padding: 12px 18px; border-radius: 16px; color: var(--ink); background: var(--paper); box-shadow: 0 14px 34px rgba(22, 24, 22, 0.18); line-height: 1.25; pointer-events: auto; transform: translate3d(var(--px, 0px), var(--py, 0px), 0) rotate(var(--r, 0deg)); }
+        .chip > span { display: block; animation: floaty 6s ease-in-out infinite; animation-delay: var(--d, 0s); }
         .chip strong { display: block; font-family: var(--serif); font-size: 1.45rem; font-weight: 400; }
         .chip small { color: var(--muted); font-size: 0.82rem; }
         .chip.green { color: white; background: var(--green); font-family: var(--serif); font-size: 1.35rem; }
-        .chip.line { border: 1.5px solid var(--ink); background: rgba(250, 250, 247, 0.75); box-shadow: none; font-family: var(--serif); font-size: 1.3rem; }
-        .chip.c1 { top: 22%; left: 8%; transform: rotate(-6deg); }
-        .chip.c2 { top: 42%; left: 4%; transform: rotate(-3deg); }
-        .chip.c3 { top: 66%; left: 11%; transform: rotate(4deg); }
-        .chip.c4 { top: 28%; right: 7%; transform: rotate(5deg); }
-        .chip.c5 { top: 60%; right: 9%; transform: rotate(-5deg); }
-        .hero > .btn-group { position: absolute; z-index: 4; bottom: 40px; left: 50%; transform: translateX(-50%); }
+        .chip.line { border: 1.5px solid currentColor; color: white; background: rgba(22, 24, 22, 0.18); backdrop-filter: blur(4px); box-shadow: none; font-family: var(--serif); font-size: 1.3rem; }
+        .chip.c1 { top: 22%; left: 8%; --r: -6deg; --d: 0s; }
+        .chip.c2 { top: 41%; left: 4%; --r: -3deg; --d: -1.5s; }
+        .chip.c3 { top: 64%; left: 12%; --r: 4deg; --d: -3s; }
+        .chip.c4 { top: 34%; right: 7%; --r: 5deg; --d: -2s; }
+        .chip.c5 { top: 66%; right: 9%; --r: -5deg; --d: -4s; }
+        @keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+        .chip { animation: popIn 0.8s cubic-bezier(.2,.9,.3,1.3) both; }
+        .chip.c2 { animation-delay: 0.1s; } .chip.c3 { animation-delay: 0.2s; } .chip.c4 { animation-delay: 0.15s; } .chip.c5 { animation-delay: 0.25s; }
+        @keyframes popIn { from { opacity: 0; scale: 0.8; } to { opacity: 1; scale: 1; } }
 
-        /* ---------- 倾斜滚动横幅 ---------- */
-        .ribbon { position: relative; z-index: 3; margin: -10px -2% 0; overflow: hidden; color: #f2f3ef; background: var(--green); transform: rotate(-1.6deg); }
+        .status { position: absolute; top: 96px; left: 50%; z-index: 7; transform: translateX(-50%); padding: 8px 18px; border: 1px solid var(--line); border-radius: 50px; color: var(--ink); background: rgba(250, 250, 247, 0.88); backdrop-filter: blur(8px); font-size: 0.85rem; white-space: nowrap; }
+        .status i { display: inline-block; width: 7px; height: 7px; margin-right: 8px; border-radius: 50%; background: #3f9a63; vertical-align: 1px; animation: pulse 2.2s ease-out infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(63,154,99,0.55); } 100% { box-shadow: 0 0 0 10px rgba(63,154,99,0); } }
+        .stage > .btn-group { position: absolute; z-index: 7; bottom: 40px; left: 50%; transform: translateX(-50%); }
+        .hint { position: absolute; z-index: 7; left: max(28px, env(safe-area-inset-left, 0px)); bottom: 46px; display: flex; align-items: center; gap: 10px; color: white; font-size: 0.75rem; letter-spacing: 0.16em; text-transform: uppercase; opacity: var(--hint, 1); text-shadow: 0 1px 8px rgba(0,0,0,0.35); }
+        .hint i { width: 1px; height: 34px; background: currentColor; transform-origin: top; animation: drip 2s ease-in-out infinite; }
+        @keyframes drip { 0% { transform: scaleY(0); } 50% { transform: scaleY(1); } 100% { transform: scaleY(1); opacity: 0; } }
+
+        /* ---------- 倾斜滚动横幅（随滚动速度倾斜） ---------- */
+        .ribbon { position: relative; z-index: 3; margin: -34px -2% 0; transform: rotate(-1.6deg); }
+        .ribbon .skew { overflow: hidden; color: #f2f3ef; background: var(--green); transform: skewX(var(--skew, 0deg)); }
         .ribbon .lane { display: flex; }
         .ribbon .track { display: flex; flex: none; gap: 1.2rem; padding: 16px 0.6rem; font-family: var(--serif); font-size: 1.6rem; white-space: nowrap; animation: slide 46s linear infinite; }
 
-        /* ---------- 宣言 ---------- */
-        .statement { padding: 140px 0 110px; text-align: center; }
-        .statement h2 { max-width: 1000px; margin: 0 auto; color: var(--ink); font-family: var(--serif); font-size: clamp(2.3rem, 5.2vw, 4.4rem); font-weight: 400; line-height: 1.08; text-wrap: balance; }
+        /* ---------- 宣言 + 3D 人才网络 ---------- */
+        .statement { display: grid; grid-template-columns: 1.4fr 1fr; align-items: center; gap: 40px; padding-top: 140px; padding-bottom: 60px; }
+        .statement h2 { color: var(--ink); font-family: var(--serif); font-size: clamp(2.3rem, 5vw, 4.2rem); font-weight: 400; line-height: 1.06; text-wrap: balance; }
         .statement h2 em { color: var(--green); }
         .statement p { margin-top: 1.5rem; color: var(--muted); font-size: 0.85rem; letter-spacing: 0.14em; text-transform: uppercase; }
+        .network { position: relative; aspect-ratio: 1; max-width: 420px; width: 100%; justify-self: center; }
+        .network canvas { display: block; width: 100% !important; height: 100% !important; }
+        .network figcaption { position: absolute; left: 0; right: 0; bottom: -6px; color: var(--muted); font-size: 0.8rem; text-align: center; }
+
+        /* ---------- 数字 ---------- */
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-bottom: 40px; }
+        .stat { padding: 30px 24px; border-left: 1px solid var(--line); }
+        .stat:first-child { border-left: 0; padding-left: 0; }
+        .stat b { display: block; color: var(--green); font-family: var(--serif); font-size: clamp(3rem, 6vw, 4.6rem); font-weight: 400; line-height: 1; font-variant-numeric: tabular-nums; }
+        .stat span { display: block; margin-top: 8px; color: var(--muted); font-size: 0.9rem; }
 
         /* ---------- 通用小节 ---------- */
         .section { padding: 90px 0; }
         .section-title { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 56px; padding-bottom: 28px; border-bottom: 1px solid var(--line); }
-        .section-title h2 { color: var(--ink); font-family: var(--serif); font-size: clamp(3.4rem, 8vw, 6.2rem); font-weight: 400; line-height: 0.95; letter-spacing: -0.01em; }
+        .section-title h2 { color: var(--ink); font-family: var(--serif); font-size: clamp(3.4rem, 8vw, 6.2rem); font-weight: 400; line-height: 0.95; letter-spacing: -0.01em; transform: translateY(var(--para, 0px)); }
         .section-title p { max-width: 24rem; color: var(--muted); font-size: 0.98rem; text-align: right; }
         .pill { display: inline-block; padding: 5px 13px; border: 1px solid #b9bdb3; border-radius: 50px; color: var(--ink); font-size: 0.75rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
         .pill.status-pill { color: var(--amber); border-color: #c9a35a; }
         .pill.green { color: var(--green); border-color: var(--green); }
         .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 22px; }
+        .meta { margin-top: 1.2rem; color: var(--muted); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; }
 
-        /* ---------- 工作经历 ---------- */
-        .job { display: grid; grid-template-columns: 190px 1fr 210px; gap: 32px; padding: 30px 0; border-bottom: 1px solid var(--line); }
-        .job:first-child { padding-top: 0; }
-        .job-years { color: var(--green); font-family: var(--serif); font-size: 1.6rem; line-height: 1.1; }
-        .job h3 { color: var(--ink); font-family: var(--serif); font-size: 2rem; font-weight: 400; line-height: 1.1; }
-        .job h4 { margin: 4px 0 10px; color: var(--ink); font-size: 1rem; font-weight: 600; }
-        .job p { max-width: 38rem; }
-        .job-place { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; color: var(--muted); font-size: 0.9rem; text-align: right; }
-        .company-logo { width: 48px; height: 48px; padding: 6px; object-fit: contain; border: 1px solid var(--line); border-radius: 12px; background: white; }
+        /* 滚动淡入：只有 JS 可用时才先隐藏 */
+        .js [data-reveal] { opacity: 0; transform: translateY(28px); transition: opacity 0.9s ease, transform 0.9s cubic-bezier(.2,.7,.2,1); transition-delay: var(--delay, 0s); }
+        .js [data-reveal].in { opacity: 1; transform: none; }
+
+        /* ---------- 工作经历：桌面端固定 + 横向滑动 ---------- */
+        .exp-pin { position: relative; }
+        .exp-sticky { position: sticky; top: 0; display: flex; flex-direction: column; justify-content: center; min-height: 100vh; min-height: 100svh; overflow: hidden; padding: 100px 0 40px; }
+        .exp-head { width: 100%; margin-bottom: 40px; }
+        .exp-head .section-title { margin-bottom: 0; }
+        .exp-track { display: flex; gap: 24px; padding-left: max(24px, calc((100vw - 1160px) / 2 + 24px)); padding-right: 24px; will-change: transform; }
+        .card { position: relative; flex: none; width: min(460px, 82vw); padding: 36px 34px 30px; border: 1px solid var(--line); background: white; }
+        .card::before { content: ""; position: absolute; top: -7px; left: 30px; width: 12px; height: 12px; border: 3px solid var(--bg); border-radius: 50%; background: var(--green); }
+        .card .years { color: var(--green); font-family: var(--serif); font-size: 1.5rem; }
+        .card h3 { margin-top: 6px; color: var(--ink); font-family: var(--serif); font-size: 2rem; font-weight: 400; line-height: 1.05; }
+        .card .org { margin: 10px 0 14px; color: var(--muted); font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; }
+        .card p { font-size: 0.98rem; }
+        .card .foot { display: flex; align-items: center; gap: 12px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.85rem; }
+        .company-logo { width: 40px; height: 40px; padding: 5px; object-fit: contain; border: 1px solid var(--line); border-radius: 10px; background: white; }
+        .exp-progress { position: relative; height: 1px; margin: 44px max(24px, calc((100vw - 1160px) / 2 + 24px)) 0; background: var(--line); }
+        .exp-progress span { position: absolute; left: 0; top: 0; height: 1px; width: var(--exp, 4%); background: var(--green); }
+        .exp-progress span::after { content: "→"; position: absolute; right: -6px; top: -14px; color: var(--green); font-size: 1.2rem; line-height: 1; }
 
         /* ---------- 项目 ---------- */
         .project { display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 64px; padding-bottom: 80px; margin-bottom: 80px; border-bottom: 1px solid var(--line); }
@@ -140,14 +180,14 @@
         .project h3 { margin-top: 10px; color: var(--ink); font-family: var(--serif); font-size: clamp(2.6rem, 4.6vw, 3.6rem); font-weight: 400; line-height: 1; }
         .project .lede { color: var(--ink); font-size: 1.15rem; }
         .project .lede + p { margin-top: 1rem; }
-        .meta { margin-top: 1.2rem; color: var(--muted); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; }
         .project .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 1.6rem; }
         .text-link { color: var(--green); font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 5px; }
-        .shot { position: relative; }
+        .shot { position: relative; perspective: 1200px; }
         .shot-label { position: absolute; top: -70px; right: 12%; display: flex; flex-direction: column; align-items: center; color: var(--green); font-family: var(--serif); font-size: 1.6rem; font-style: italic; text-decoration: none; }
-        .shot-label svg { width: 18px; height: 34px; margin-top: 2px; }
-        .shot a.frame { display: block; overflow: hidden; padding: 14px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); box-shadow: 0 30px 60px rgba(22, 24, 22, 0.12); transition: transform 0.25s; text-decoration: none; }
-        .shot a.frame:hover { transform: translateY(-4px) rotate(-0.3deg); }
+        .shot-label svg { width: 18px; height: 34px; margin-top: 2px; animation: nudge 1.8s ease-in-out infinite; }
+        @keyframes nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
+        .shot a.frame { display: block; overflow: hidden; padding: 14px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); box-shadow: 0 30px 60px rgba(22, 24, 22, 0.12); text-decoration: none; transform: rotateX(var(--tx, 0deg)) rotateY(var(--ty, 0deg)); transition: transform 0.25s ease-out, box-shadow 0.25s; }
+        .shot a.frame:hover { box-shadow: 0 40px 80px rgba(22, 24, 22, 0.18); }
         .shot .bar { display: flex; gap: 6px; padding: 2px 4px 12px; }
         .shot .bar i { width: 10px; height: 10px; border-radius: 50%; background: #d4d6ce; }
         .shot img { display: block; width: 100%; height: auto; border-radius: 8px; }
@@ -166,7 +206,7 @@
         .replay-btn { margin-top: 14px; padding: 6px 14px; border: 1px solid #b9bdb3; border-radius: 50px; color: var(--ink); background: transparent; font: inherit; font-size: 0.8rem; cursor: pointer; }
         .replay-btn:hover { color: white; background: var(--green); border-color: var(--green); }
         .stops { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
-        .stops button { padding: 6px 12px; border: 1px solid var(--line); border-radius: 50px; color: var(--ink); background: var(--paper); font: inherit; font-size: 0.82rem; cursor: pointer; }
+        .stops button { padding: 6px 12px; border: 1px solid var(--line); border-radius: 50px; color: var(--ink); background: var(--paper); font: inherit; font-size: 0.82rem; cursor: pointer; transition: background 0.2s, border-color 0.2s; }
         .stops button b { margin-right: 5px; color: var(--green); font-family: var(--serif); font-size: 1rem; font-weight: 400; }
         .stops button:hover, .stops button.on { border-color: var(--green); background: var(--green-soft); }
         .leaflet-container { font-family: var(--sans); }
@@ -174,8 +214,9 @@
         /* ---------- 社区回馈 ---------- */
         .giving { display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: start; }
         .photos { position: relative; height: 470px; }
-        .photos figure { position: absolute; overflow: hidden; border: 10px solid var(--paper); border-radius: 18px; background: var(--paper); box-shadow: 0 22px 50px rgba(22, 24, 22, 0.16); }
+        .photos figure { position: absolute; overflow: hidden; border: 10px solid var(--paper); border-radius: 18px; background: var(--paper); box-shadow: 0 22px 50px rgba(22, 24, 22, 0.16); transition: transform 0.4s ease; }
         .photos img { display: block; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.05); transition: filter 0.4s; }
+        .photos figure:hover { transform: rotate(0deg) scale(1.03) !important; z-index: 2; }
         .photos figure:hover img { filter: none; }
         .photos .p1 { top: 0; left: 0; width: 78%; height: 300px; transform: rotate(-2.5deg); }
         .photos .p2 { right: 0; bottom: 0; width: 46%; height: 310px; transform: rotate(3deg); }
@@ -204,32 +245,41 @@
         }
         @media (max-width: 900px) {
             .nav-pill { display: none; }
-            .project, .giving, .more-projects { grid-template-columns: 1fr; gap: 40px; }
-            .job { grid-template-columns: 1fr; gap: 6px; }
-            .job-place { flex-direction: row-reverse; justify-content: flex-end; align-items: center; text-align: left; }
+            .statement, .project, .giving, .more-projects { grid-template-columns: 1fr; gap: 40px; }
+            .network { max-width: 320px; }
+            .stats { grid-template-columns: 1fr 1fr; }
+            .stat:nth-child(3) { border-left: 0; padding-left: 0; }
+            .stat:nth-child(n+3) { border-top: 1px solid var(--line); }
             .section-title { flex-direction: column; align-items: flex-start; }
             .section-title p { text-align: left; }
             .shot-label { position: static; flex-direction: row; gap: 8px; margin-bottom: 12px; }
-            .shot-label svg { transform: rotate(-90deg); }
+            .shot-label svg { transform: rotate(-90deg); animation: none; }
+            /* 手机/平板：经历改为左右滑动 */
+            .exp-pin { height: auto !important; }
+            .exp-sticky { position: static; min-height: 0; padding: 64px 0 24px; }
+            .exp-track { overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 12px; transform: none !important; scrollbar-width: none; }
+            .exp-track::-webkit-scrollbar { display: none; }
+            .card { scroll-snap-align: start; }
+            .exp-progress { display: none; }
         }
         @media (max-width: 640px) {
             body { font-size: 16px; }
             nav .inner { height: 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
             .wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-            .hero { display: block; min-height: auto; padding: 128px 0 40px; text-align: center; }
+            .hero-pin { height: 200vh; }
             .status { top: 76px; max-width: calc(100% - 32px); overflow: hidden; text-overflow: ellipsis; font-size: 0.78rem; }
-            .portrait { margin: 0 auto; width: 66vw; }
-            .marquee.row-1 { top: 150px; } .marquee.row-2 { top: 260px; }
-            .chips { margin-top: 26px; padding: 0 12px; }
-            .chip { position: static; display: inline-block; margin: 6px 3px 0; transform: none !important; padding: 9px 14px; }
-            .chip.c2, .chip.c5 { display: inline-block; }
-            .chip strong { font-size: 1.2rem; }
-            .chip.green, .chip.line { font-size: 1.15rem; }
-            .hero > .btn-group { position: static; transform: none; margin-top: 28px; }
-            .statement { padding: 90px 0 70px; }
+            .chip { padding: 9px 14px; }
+            .chip strong { font-size: 1.15rem; }
+            .chip.green, .chip.line { font-size: 1.1rem; }
+            .chip.c1 { top: 15%; left: 4%; } .chip.c4 { top: 55%; right: 3%; } .chip.c3 { top: 68%; left: 5%; }
+            .stage > .btn-group { bottom: 28px; }
+            .hint { display: none; }
+            .statement { padding-top: 100px; }
+            .stat { padding: 22px 14px; }
             .section { padding: 64px 0; }
             .section-title { margin-bottom: 36px; }
             .project { padding-bottom: 56px; margin-bottom: 56px; }
+            .card { padding: 30px 24px 24px; }
             #map { height: 360px; }
             .map-card { position: static; width: auto; border: 0; border-top: 1px solid var(--line); border-radius: 0; box-shadow: none; }
             .photos { height: 360px; }
@@ -237,10 +287,14 @@
             .photos .p2 { width: 50%; height: 220px; }
             .talk { grid-template-columns: 1fr; gap: 4px; }
         }
+        /* 系统设置了减少动态效果：不固定第一屏、不播放循环动画，直接显示最终状态 */
         @media (prefers-reduced-motion: reduce) {
             html { scroll-behavior: auto; }
-            .marquee .track, .ribbon .track { animation: none; }
-            .btn, .shot a.frame { transition: none; }
+            .hero-pin { height: auto; }
+            .marquee .track, .ribbon .track, .chip, .chip > span, .status i, .hint i, .shot-label svg { animation: none; }
+            .js [data-reveal] { opacity: 1; transform: none; transition: none; }
+            .btn, .shot a.frame, .photos figure { transition: none; }
+            .chip.line { color: var(--ink); background: rgba(250, 250, 247, 0.85); }
         }
     </style>
 </head>
@@ -264,102 +318,116 @@
         <div class="progress" id="progress"></div>
     </nav>
 
-    <header class="hero" id="top">
-        <h1 class="sr-only">Fiona Cui, Global Technical &amp; Science Recruiter</h1>
-        <span class="status"><i></i>Hiring AI researchers at Huawei Canada · Vancouver</span>
+    <header class="hero-pin" id="top">
+        <div class="stage" id="stage">
+            <h1 class="sr-only">Fiona Cui, Global Technical &amp; Science Recruiter</h1>
 
-        <div class="marquee row-1" aria-hidden="true">
-            <div class="track"><span>Fiona Cui</span><span class="dot">●</span><span class="outline">Fiona Cui</span><span class="dot">●</span><span>Fiona Cui</span><span class="dot">●</span><span class="outline">Fiona Cui</span><span class="dot">●</span></div>
-            <div class="track"><span>Fiona Cui</span><span class="dot">●</span><span class="outline">Fiona Cui</span><span class="dot">●</span><span>Fiona Cui</span><span class="dot">●</span><span class="outline">Fiona Cui</span><span class="dot">●</span></div>
-        </div>
-        <div class="marquee row-2" aria-hidden="true">
-            <div class="track"><span class="outline">Fiona Cui</span><span class="dot">●</span><span>Fiona Cui</span><span class="dot">●</span><span class="outline">Fiona Cui</span><span class="dot">●</span><span>Fiona Cui</span><span class="dot">●</span></div>
-            <div class="track"><span class="outline">Fiona Cui</span><span class="dot">●</span><span>Fiona Cui</span><span class="dot">●</span><span class="outline">Fiona Cui</span><span class="dot">●</span><span>Fiona Cui</span><span class="dot">●</span></div>
-        </div>
+            <div class="marquee row-1" aria-hidden="true">
+                <div class="track"><span>Fiona Cui</span><span class="dot">●</span><span class="outline">Fiona Cui</span><span class="dot">●</span><span>Fiona Cui</span><span class="dot">●</span><span class="outline">Fiona Cui</span><span class="dot">●</span></div>
+                <div class="track"><span>Fiona Cui</span><span class="dot">●</span><span class="outline">Fiona Cui</span><span class="dot">●</span><span>Fiona Cui</span><span class="dot">●</span><span class="outline">Fiona Cui</span><span class="dot">●</span></div>
+            </div>
+            <div class="marquee row-2" aria-hidden="true">
+                <div class="track"><span class="outline">Fiona Cui</span><span class="dot">●</span><span>Fiona Cui</span><span class="dot">●</span><span class="outline">Fiona Cui</span><span class="dot">●</span><span>Fiona Cui</span><span class="dot">●</span></div>
+                <div class="track"><span class="outline">Fiona Cui</span><span class="dot">●</span><span>Fiona Cui</span><span class="dot">●</span><span class="outline">Fiona Cui</span><span class="dot">●</span><span>Fiona Cui</span><span class="dot">●</span></div>
+            </div>
 
-        <div class="portrait">
-            <div class="frame"><img src="profile.jpg" alt="Portrait of Fiona Cui"></div>
-            <span class="signature" aria-hidden="true">Fiona</span>
-        </div>
+            <div class="photo" id="photo"><img id="photo-img" src="profile.jpg" alt="Portrait of Fiona Cui"></div>
+            <canvas id="color" aria-hidden="true"></canvas>
+            <canvas id="dots" aria-hidden="true"></canvas>
+            <span class="signature" id="signature" aria-hidden="true">Fiona</span>
 
-        <div class="chips">
-            <span class="chip green c1">AI/ML × Recruiting</span>
-            <span class="chip c2"><strong>Huawei Canada</strong><small>AI research hiring · LLMs, multimodal</small></span>
-            <span class="chip line c3">Wuhan ⇄ Vancouver</span>
-            <span class="chip c4"><strong>Cellarity</strong><small>Flagship Pioneering · 85 → 150 people</small></span>
-            <span class="chip line c5">Builds her own sourcing tools</span>
-        </div>
+            <div class="chips" id="chips">
+                <span class="chip green c1" data-depth="1.2"><span>AI/ML × Recruiting</span></span>
+                <span class="chip c2" data-depth="0.7"><span><strong>Huawei Canada</strong><small>AI research hiring · LLMs, multimodal</small></span></span>
+                <span class="chip line c3" data-depth="1.5"><span>Wuhan ⇄ Vancouver</span></span>
+                <span class="chip c4" data-depth="0.9"><span><strong>Cellarity</strong><small>Flagship Pioneering · 85 → 150 people</small></span></span>
+                <span class="chip line c5" data-depth="1.3"><span>Builds her own sourcing tools</span></span>
+            </div>
 
-        <div class="btn-group">
-            <a class="btn" href="mailto:fionacuicareer@gmail.com">Email me</a>
-            <a class="btn ghost" href="https://www.linkedin.com/in/xiaoju-cui-04001694/" target="_blank" rel="noopener">LinkedIn</a>
+            <span class="status"><i></i>Hiring AI researchers at Huawei Canada · Vancouver</span>
+            <span class="hint" aria-hidden="true"><i></i>Scroll</span>
+            <div class="btn-group">
+                <a class="btn" href="mailto:fionacuicareer@gmail.com">Email me</a>
+                <a class="btn ghost" href="https://www.linkedin.com/in/xiaoju-cui-04001694/" target="_blank" rel="noopener">LinkedIn</a>
+            </div>
         </div>
     </header>
 
     <div class="ribbon" aria-hidden="true">
-        <div class="lane">
-            <div class="track"><span>AI/ML Research Hiring</span><span>·</span><span>LLMs &amp; Multimodal</span><span>·</span><span>Asia ⇄ North America</span><span>·</span><span>Open-Source Sourcing</span><span>·</span><span>Biotech × AI</span><span>·</span><span>Talent Mapping</span><span>·</span></div>
-            <div class="track"><span>AI/ML Research Hiring</span><span>·</span><span>LLMs &amp; Multimodal</span><span>·</span><span>Asia ⇄ North America</span><span>·</span><span>Open-Source Sourcing</span><span>·</span><span>Biotech × AI</span><span>·</span><span>Talent Mapping</span><span>·</span></div>
+        <div class="skew" id="ribbon">
+            <div class="lane">
+                <div class="track"><span>AI/ML Research Hiring</span><span>·</span><span>LLMs &amp; Multimodal</span><span>·</span><span>Asia ⇄ North America</span><span>·</span><span>Open-Source Sourcing</span><span>·</span><span>Biotech × AI</span><span>·</span><span>Talent Mapping</span><span>·</span></div>
+                <div class="track"><span>AI/ML Research Hiring</span><span>·</span><span>LLMs &amp; Multimodal</span><span>·</span><span>Asia ⇄ North America</span><span>·</span><span>Open-Source Sourcing</span><span>·</span><span>Biotech × AI</span><span>·</span><span>Talent Mapping</span><span>·</span></div>
+            </div>
         </div>
     </div>
 
-    <section class="statement wrap" aria-label="About">
-        <h2>I find engineers and researchers by <em>the work they publish</em>, not by job-title keywords.</h2>
-        <p>Global Technical &amp; Science Recruiter · AI/ML, LLMs, Engineering</p>
-    </section>
-
     <main>
-        <section class="section wrap" id="experience">
-            <div class="section-title">
-                <h2>Experience</h2>
-                <p>Ten years of hiring across AI, biotech, and global markets, from Jakarta and New Delhi to Boston and Vancouver.</p>
+        <section class="statement wrap" aria-label="About">
+            <div data-reveal>
+                <h2>I find engineers and researchers by <em>the work they publish</em>, not by job-title keywords.</h2>
+                <p>Global Technical &amp; Science Recruiter · AI/ML, LLMs, Engineering</p>
             </div>
-            <div class="jobs">
-                <article class="job">
-                    <div class="job-years">2025 – Now</div>
-                    <div>
+            <figure class="network" id="network" data-reveal style="--delay: 0.15s">
+                <figcaption>Every node a person, every line a connection.</figcaption>
+            </figure>
+        </section>
+
+        <div class="wrap">
+            <div class="stats" data-reveal>
+                <div class="stat"><b data-count="10">10</b><span>years in recruiting and HR</span></div>
+                <div class="stat"><b data-count="6">6</b><span>countries lived and worked in</span></div>
+                <div class="stat"><b data-count="150" data-from="85">150</b><span>Cellarity headcount, up from 85</span></div>
+                <div class="stat"><b data-count="100" data-suffix="+">100+</b><span>people at a typical career talk</span></div>
+            </div>
+        </div>
+
+        <section class="exp-pin" id="experience">
+            <div class="exp-sticky">
+                <div class="wrap exp-head">
+                    <div class="section-title">
+                        <h2>Experience</h2>
+                        <p>Ten years of hiring across AI, biotech, and global markets, from Jakarta and New Delhi to Boston and Vancouver.</p>
+                    </div>
+                </div>
+                <div class="exp-track" id="exp-track">
+                    <article class="card">
+                        <div class="years">2025 – Now</div>
                         <h3>Executive Searching Recruiter</h3>
-                        <h4>Huawei Canada</h4>
+                        <div class="org">Huawei Canada · Vancouver</div>
                         <p>Leading AI research recruitment strategy (LLMs, Multimodal). Building pipelines from top conferences (ICCV, NeurIPS).</p>
-                    </div>
-                    <div class="job-place"><img src="images/logo-huawei.png" alt="Huawei logo" class="company-logo"><span>Vancouver, Canada<br>Sep 2025 – Present</span></div>
-                </article>
-                <article class="job">
-                    <div class="job-years">2024 – 2025</div>
-                    <div>
+                        <div class="foot"><img src="images/logo-huawei.png" alt="Huawei logo" class="company-logo">Sep 2025 – Present</div>
+                    </article>
+                    <article class="card">
+                        <div class="years">2024 – 2025</div>
                         <h3>Founder &amp; Headhunter</h3>
-                        <h4>Globetrek Talent</h4>
+                        <div class="org">Globetrek Talent · San Francisco &amp; Remote</div>
                         <p>AI-driven sourcing for SaaS startups across North America and APAC.</p>
-                    </div>
-                    <div class="job-place"><img src="https://ui-avatars.com/api/?name=Globetrek&background=2e5b41&color=fff" alt="Globetrek Talent logo" class="company-logo"><span>San Francisco &amp; Remote<br>Mar 2024 – Sep 2025</span></div>
-                </article>
-                <article class="job">
-                    <div class="job-years">2022 – 2024</div>
-                    <div>
+                        <div class="foot"><img src="https://ui-avatars.com/api/?name=Globetrek&background=2e5b41&color=fff" alt="Globetrek Talent logo" class="company-logo">Mar 2024 – Sep 2025</div>
+                    </article>
+                    <article class="card">
+                        <div class="years">2022 – 2024</div>
                         <h3>Talent Acquisition Manager</h3>
-                        <h4>Cellarity Inc (Flagship Pioneering)</h4>
+                        <div class="org">Cellarity Inc (Flagship Pioneering) · Boston</div>
                         <p>Scaled Series B startup from 85 to 150 headcount. Hired niche ML Engineers and Scientists.</p>
-                    </div>
-                    <div class="job-place"><img src="images/logo-cellarity.png" alt="Cellarity logo" class="company-logo"><span>Boston, MA<br>Apr 2022 – Mar 2024</span></div>
-                </article>
-                <article class="job">
-                    <div class="job-years">2019</div>
-                    <div>
+                        <div class="foot"><img src="images/logo-cellarity.png" alt="Cellarity logo" class="company-logo">Apr 2022 – Mar 2024</div>
+                    </article>
+                    <article class="card">
+                        <div class="years">2019</div>
                         <h3>HR Process Improvement Intern</h3>
-                        <h4>United Nations HQ</h4>
+                        <div class="org">United Nations HQ · New York</div>
                         <p>Redesigned recruitment workflows using Lean Six Sigma, reducing time-to-hire.</p>
-                    </div>
-                    <div class="job-place"><img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Flag_of_the_United_Nations.svg" alt="United Nations flag" class="company-logo"><span>New York, NY<br>Jun – Aug 2019</span></div>
-                </article>
-                <article class="job">
-                    <div class="job-years">2015 – 2018</div>
-                    <div>
+                        <div class="foot"><img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Flag_of_the_United_Nations.svg" alt="United Nations flag" class="company-logo">Jun – Aug 2019</div>
+                    </article>
+                    <article class="card">
+                        <div class="years">2015 – 2018</div>
                         <h3>HR Supervisor (APAC)</h3>
-                        <h4>Tiens Group</h4>
+                        <div class="org">Tiens Group · Indonesia &amp; India</div>
                         <p>Managed HR operations across 8 countries. Built sales teams from scratch in New Delhi.</p>
-                    </div>
-                    <div class="job-place"><img src="images/logo-tiens.png" alt="Tiens Group logo" class="company-logo"><span>Indonesia &amp; India</span></div>
-                </article>
+                        <div class="foot"><img src="images/logo-tiens.png" alt="Tiens Group logo" class="company-logo">2015 – 2018</div>
+                    </article>
+                </div>
+                <div class="exp-progress" aria-hidden="true"><span id="exp-progress"></span></div>
             </div>
         </section>
 
@@ -370,7 +438,7 @@
             </div>
 
             <article class="project">
-                <div>
+                <div data-reveal>
                     <div class="project-num">1</div>
                     <h3>Contributor Atlas</h3>
                     <div class="pills"><span class="pill">Open-source sourcing</span><span class="pill">GitHub GraphQL</span><span class="pill status-pill">Live demo</span></div>
@@ -383,11 +451,11 @@
                         <a class="text-link" href="contributor-atlas/case-study.html">Case study →</a>
                     </div>
                 </div>
-                <figure class="shot">
+                <figure class="shot" data-reveal style="--delay: 0.15s">
                     <a class="shot-label" href="contributor-atlas/">Try the demo
                         <svg viewBox="0 0 18 34" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><path d="M9 1v31M2 25l7 7 7-7"/></svg>
                     </a>
-                    <a class="frame" href="contributor-atlas/" aria-label="Open the Contributor Atlas demo">
+                    <a class="frame" id="tilt" href="contributor-atlas/" aria-label="Open the Contributor Atlas demo">
                         <div class="bar" aria-hidden="true"><i></i><i></i><i></i></div>
                         <img src="images/contributor-atlas-ranking.jpg" width="1600" height="955" loading="lazy" alt="Contributor Atlas ranking 1,263 contributors across vLLM, Triton and SGLang, with 50 active in more than one community">
                     </a>
@@ -396,14 +464,14 @@
             </article>
 
             <div class="more-projects">
-                <article>
+                <article data-reveal>
                     <div class="project-num">2</div>
                     <h3>Research Talent Workbench</h3>
                     <div class="pills"><span class="pill">Conference sourcing</span><span class="pill">MCP</span><span class="pill green">Private</span></div>
                     <p>A searchable pool of ML researchers built from conference papers and citations. Collects authors from ML conferences, expands through Semantic Scholar and CSRankings, verifies GitHub identities, maps co-author networks, and lets AI assistants query the pool through an MCP server that hides contact details by default.</p>
                     <p class="meta">Python · Flask · SQLite · Private repository: it holds candidate data</p>
                 </article>
-                <article>
+                <article data-reveal style="--delay: 0.12s">
                     <div class="project-num">3</div>
                     <h3>Interview Slot Finder</h3>
                     <div class="pills"><span class="pill">Scheduling</span><span class="pill">Time zones</span></div>
@@ -418,7 +486,7 @@
                 <h2>Journey</h2>
                 <p>Six countries in ten years. Tap a stop to jump there.</p>
             </div>
-            <div class="map-frame">
+            <div class="map-frame" data-reveal>
                 <div id="map" role="img" aria-label="Map of Fiona Cui's career path from Wuhan through Thailand, India, Indonesia, New York, Michigan, Boston and San Francisco to Vancouver"></div>
                 <div class="map-card" aria-live="polite">
                     <span class="overlay-year" id="disp-year">2014</span>
@@ -436,7 +504,7 @@
                 <p>I volunteer my time to help job seekers and scientists see hiring from the recruiter's side, usually for audiences of 100+.</p>
             </div>
             <div class="giving">
-                <div class="photos">
+                <div class="photos" data-reveal>
                     <figure class="p1">
                         <img src="images/sapa-2023-panel.jpg" alt="Fiona Cui speaking on a panel at the SAPA Career Development Workshop 2023" loading="lazy">
                         <figcaption>Panelist, SAPA Career Development Workshop 2023</figcaption>
@@ -447,7 +515,7 @@
                     </figure>
                 </div>
                 <div class="talks">
-                    <article class="talk">
+                    <article class="talk" data-reveal>
                         <div class="talk-date">Oct 2024<small>Online</small></div>
                         <div>
                             <h3>Job Searching and Interviewing in North America</h3>
@@ -455,7 +523,7 @@
                             <p>Shared how candidates can stand out in North American interviews, from a recruiter's point of view.</p>
                         </div>
                     </article>
-                    <article class="talk">
+                    <article class="talk" data-reveal style="--delay: 0.1s">
                         <div class="talk-date">Mar 2024<small>Panelist</small></div>
                         <div>
                             <h3>Career Catalyst: Igniting Exploration, Interviewing, and Transition Triumphs</h3>
@@ -463,7 +531,7 @@
                             <p>Coached scientists on answering "Tell me about yourself" in under three minutes, and on using small talk to set a relaxed, equal tone with the interviewer.</p>
                         </div>
                     </article>
-                    <article class="talk">
+                    <article class="talk" data-reveal style="--delay: 0.2s">
                         <div class="talk-date">Apr 2023<small>Speaker</small></div>
                         <div>
                             <h3>Career Development Panel</h3>
@@ -477,7 +545,7 @@
     </main>
 
     <section class="contact wrap" id="contact">
-        <h2>Let's <em>talk.</em></h2>
+        <h2 data-reveal>Let's <em>talk.</em></h2>
         <p>Hiring AI talent, or exploring your next role? Write to <span class="email">fionacuicareer@gmail.com</span>.</p>
         <div class="btn-group">
             <a class="btn" href="mailto:fionacuicareer@gmail.com">Email me</a>
@@ -491,23 +559,309 @@
     <!-- 脚本区域 -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 导航：滚动后加底色，显示阅读进度，并高亮当前小节
+    (() => {
+        const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const finePointer = matchMedia('(pointer: fine)').matches;
+        const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+        const lerp = (a, b, t) => a + (b - a) * t;
+        const smooth = (v, a, b) => { const t = clamp((v - a) / (b - a)); return t * t * (3 - 2 * t); };
+        const easeInOut = (t) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+        // ----- 元素 -----
         const nav = document.getElementById('nav');
         const progress = document.getElementById('progress');
+        const heroPin = document.getElementById('top');
+        const stage = document.getElementById('stage');
+        const photo = document.getElementById('photo');
+        const photoImg = document.getElementById('photo-img');
+        const colorCanvas = document.getElementById('color');
+        const dotsCanvas = document.getElementById('dots');
+        const signature = document.getElementById('signature');
+        const chipsEl = document.getElementById('chips');
+        const chips = [...document.querySelectorAll('.chip')];
+        const ribbon = document.getElementById('ribbon');
+        const expPin = document.getElementById('experience');
+        const expTrack = document.getElementById('exp-track');
+        const expBar = document.getElementById('exp-progress');
         const navLinks = [...document.querySelectorAll('.nav-pill a')];
-        function onScroll() {
-            const max = document.documentElement.scrollHeight - innerHeight;
-            progress.style.width = (max > 0 ? (scrollY / max) * 100 : 0) + '%';
-            nav.classList.toggle('scrolled', scrollY > 40);
-            let current = '';
-            document.querySelectorAll('main section[id], #contact').forEach((section) => {
-                if (section.getBoundingClientRect().top < innerHeight * 0.35) current = section.id;
+        const titles = [...document.querySelectorAll('.section-title h2')];
+        const dpr = Math.min(devicePixelRatio || 1, 2);
+
+        // ----- 尺寸缓存：只在宽度变化时重算，避免手机地址栏伸缩导致抖动 -----
+        let chipSides = [];
+        let vw = 0, vh = 0, heroLen = 1, expTop = 0, expLen = 1, expOverflow = 0, sections = [], titleTops = [];
+        function layout() {
+            vw = document.documentElement.clientWidth;
+            vh = innerHeight;
+            [colorCanvas, dotsCanvas].forEach((c) => { c.width = Math.round(vw * dpr); c.height = Math.round(vh * dpr); });
+            mask.width = Math.round(vw / 2); mask.height = Math.round(vh / 2);
+            // 经历：桌面端用纵向滚动距离驱动横向移动
+            if (vw > 900 && !reduceMotion) {
+                expOverflow = Math.max(0, expTrack.scrollWidth - vw);
+                expPin.style.height = (vh + expOverflow) + 'px';
+            } else {
+                expOverflow = 0;
+                expPin.style.height = '';
+            }
+            heroLen = Math.max(1, heroPin.offsetHeight - vh);
+            expTop = expPin.offsetTop;
+            expLen = Math.max(1, expPin.offsetHeight - vh);
+            sections = [...document.querySelectorAll('main section[id], #contact')].map((s) => ({ id: s.id, top: s.offsetTop }));
+            titleTops = titles.map((t) => t.closest('section').offsetTop);
+            chipSides = chips.map((chip) => (chip.offsetLeft + chip.offsetWidth / 2 < vw / 2 ? -1 : 1));
+            buildDots();
+            dirty = true;
+        }
+        let lastWidth = 0;
+        addEventListener('resize', () => { if (document.documentElement.clientWidth !== lastWidth) { lastWidth = document.documentElement.clientWidth; layout(); } });
+
+        // ----- 1. 鼠标聚光灯：拖尾刷出彩色，慢慢消散 -----
+        const mask = document.createElement('canvas');
+        const mctx = mask.getContext('2d');
+        const cctx = colorCanvas.getContext('2d');
+        const colorImg = new Image();
+        colorImg.src = photoImg.currentSrc || photoImg.src;
+        let pointer = { x: -999, y: -999, ex: -999, ey: -999, inside: false, moved: 0 };
+        let trailAlive = 0;
+        stage.addEventListener('pointermove', (e) => {
+            if (e.pointerType !== 'mouse') return;
+            const r = stage.getBoundingClientRect();
+            pointer.x = e.clientX - r.left; pointer.y = e.clientY - r.top; pointer.inside = true; pointer.moved = performance.now();
+            if (pointer.ex < -900) { pointer.ex = pointer.x; pointer.ey = pointer.y; }
+        });
+        stage.addEventListener('pointerleave', () => { pointer.inside = false; });
+        // 触屏：轻点一下短暂显出彩色，不影响滚动
+        stage.addEventListener('pointerdown', (e) => {
+            if (e.pointerType === 'mouse') return;
+            const r = stage.getBoundingClientRect();
+            const x = (e.clientX - r.left) / 2, y = (e.clientY - r.top) / 2;
+            for (let k = 0; k < 6; k++) brush(x, y, 90);
+            trailAlive = performance.now();
+        });
+        function brush(x, y, radius) {
+            const g = mctx.createRadialGradient(x, y, 0, x, y, radius);
+            g.addColorStop(0, 'rgba(0,0,0,0.9)'); g.addColorStop(0.6, 'rgba(0,0,0,0.35)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+            mctx.fillStyle = g; mctx.beginPath(); mctx.arc(x, y, radius, 0, Math.PI * 2); mctx.fill();
+        }
+        // 与 CSS object-fit: cover + object-position: 50% 18% 相同的裁切
+        function coverRect(rx, ry, rw, rh) {
+            const iw = colorImg.naturalWidth, ih = colorImg.naturalHeight;
+            const s = Math.max(rw / iw, rh / ih), dw = iw * s, dh = ih * s;
+            return [rx + (rw - dw) * 0.5, ry + (rh - dh) * 0.18, dw, dh];
+        }
+        function drawColor(rect, radius, now) {
+            if (!colorImg.complete || !colorImg.naturalWidth) return;
+            const painting = pointer.inside && now - pointer.moved < 1200;
+            if (!painting && now - trailAlive > 5000) { if (trailAlive) { cctx.clearRect(0, 0, colorCanvas.width, colorCanvas.height); mctx.clearRect(0, 0, mask.width, mask.height); trailAlive = 0; } return; }
+            // 拖尾慢慢消散……
+            mctx.globalCompositeOperation = 'destination-out';
+            mctx.fillStyle = 'rgba(0,0,0,0.018)';
+            mctx.fillRect(0, 0, mask.width, mask.height);
+            mctx.globalCompositeOperation = 'source-over';
+            // ……画笔跟着缓动后的光标继续画
+            if (painting) {
+                pointer.ex = lerp(pointer.ex, pointer.x, 0.22); pointer.ey = lerp(pointer.ey, pointer.y, 0.22);
+                brush(pointer.ex / 2, pointer.ey / 2, Math.max(60, Math.min(vw, vh) * 0.11));
+                trailAlive = now;
+            }
+            // 彩色照片按遮罩显示
+            cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            cctx.globalCompositeOperation = 'source-over';
+            cctx.clearRect(0, 0, vw, vh);
+            cctx.save();
+            cctx.beginPath();
+            if (cctx.roundRect) cctx.roundRect(rect.x, rect.y, rect.w, rect.h, radius); else cctx.rect(rect.x, rect.y, rect.w, rect.h);
+            cctx.clip();
+            cctx.drawImage(colorImg, ...coverRect(rect.x, rect.y, rect.w, rect.h));
+            cctx.restore();
+            cctx.globalCompositeOperation = 'destination-in';
+            cctx.drawImage(mask, 0, 0, vw, vh);
+            cctx.globalCompositeOperation = 'source-over';
+        }
+
+        // ----- 2. 点阵：靠近光标的点变大变绿 -----
+        const dctx = dotsCanvas.getContext('2d');
+        let dots = [];
+        function buildDots() {
+            dots = [];
+            const gap = vw < 640 ? 22 : 26;
+            for (let y = gap / 2; y < vh; y += gap) for (let x = gap / 2; x < vw; x += gap) dots.push([x + (Math.random() - 0.5) * 3, y + (Math.random() - 0.5) * 3, Math.random()]);
+        }
+        let lastDots = '';
+        function drawDots(p, now) {
+            const key = [Math.round(pointer.ex), Math.round(pointer.ey), pointer.inside ? 1 : 0, Math.round(p * 100)].join();
+            if (key === lastDots && now - pointer.moved > 1300) return;
+            lastDots = key;
+            dctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            dctx.clearRect(0, 0, vw, vh);
+            const reach = 170, base = 0.13 + p * 0.1;
+            for (const [x, y, n] of dots) {
+                let a = base * (0.6 + n * 0.6), r = 0.9, green = false;
+                if (pointer.inside) {
+                    const d = Math.hypot(x - pointer.ex, y - pointer.ey);
+                    if (d < reach) { const k = 1 - d / reach; a = Math.min(0.85, a + k * 0.75); r = 0.9 + k * 1.6; green = n > 0.35; }
+                }
+                dctx.fillStyle = green ? `rgba(46,91,65,${a})` : `rgba(60,66,60,${a})`;
+                dctx.fillRect(x - r, y - r, r * 2, r * 2);
+            }
+        }
+
+        // ----- 3. 第一屏固定滚动：全屏照片 → 相框，名字浮现，签名写出 -----
+        let mx = 0, my = 0, emx = 0, emy = 0;
+        addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') { mx = e.clientX / vw - 0.5; my = e.clientY / vh - 0.5; } }, { passive: true });
+        function heroFrame(sy, now) {
+            const p = reduceMotion ? 1 : clamp(sy / heroLen);
+            const t = easeInOut(clamp(p / 0.55));
+            const fw = Math.min(380, vw * 0.68), fh = fw * 1.25;
+            const end = { x: (vw - fw) / 2, y: (vh - fh) / 2 + 12, w: fw, h: fh };
+            const rect = { x: lerp(0, end.x, t), y: lerp(0, end.y, t), w: lerp(vw, end.w, t), h: lerp(vh, end.h, t) };
+            const radius = lerp(0, 26, t);
+            photo.style.left = rect.x + 'px'; photo.style.top = rect.y + 'px';
+            photo.style.width = rect.w + 'px'; photo.style.height = rect.h + 'px';
+            photo.style.borderRadius = radius + 'px';
+            photo.style.boxShadow = t > 0.05 ? `0 30px 70px rgba(22,24,22,${0.25 * t})` : 'none';
+            photo.style.setProperty('--veil', 1 - t);
+            stage.style.setProperty('--name', smooth(p, 0.28, 0.6));
+            signature.style.setProperty('--sig', reduceMotion ? 1 : smooth(p, 0.5, 0.88));
+            stage.style.setProperty('--hint', 1 - smooth(p, 0, 0.12));
+            // 标签：鼠标视差 + 随滚动散开
+            emx = lerp(emx, mx, 0.08); emy = lerp(emy, my, 0.08);
+            const spread = reduceMotion ? 0 : smooth(p, 0.02, 0.32);
+            chipsEl.style.setProperty('--chips', reduceMotion ? 1 : 1 - spread);
+            chips.forEach((chip, i) => {
+                const depth = +chip.dataset.depth;
+                const side = chipSides[i] || 1;
+                chip.style.setProperty('--px', (emx * 34 * depth + side * spread * 140) + 'px');
+                chip.style.setProperty('--py', (emy * 24 * depth - spread * 60 * depth) + 'px');
             });
+            if (!reduceMotion) {
+                drawColor(rect, radius, now);
+                drawDots(p, now);
+            }
+        }
+
+        // ----- 4. 横幅随滚动速度倾斜，标题视差，进度条，经历横向滑动，导航高亮 -----
+        let lastY = scrollY, skew = 0, dirty = true;
+        function pageFrame(sy) {
+            const v = sy - lastY; lastY = sy;
+            skew = lerp(skew, clamp(v * 0.18, -9, 9), 0.12);
+            if (!reduceMotion) ribbon.style.setProperty('--skew', skew.toFixed(2) + 'deg');
+            const max = document.documentElement.scrollHeight - vh;
+            progress.style.width = (max > 0 ? (sy / max) * 100 : 0) + '%';
+            nav.classList.toggle('scrolled', sy > heroLen + vh * 0.6);
+            if (!reduceMotion) titles.forEach((t, i) => {
+                const d = titleTops[i] - sy - vh * 0.5;
+                if (Math.abs(d) < vh * 1.4) t.style.setProperty('--para', (d * 0.06).toFixed(1) + 'px');
+            });
+            if (expOverflow > 0) {
+                const q = clamp((sy - expTop) / expLen);
+                expTrack.style.transform = `translate3d(${-q * expOverflow}px,0,0)`;
+                expBar.style.setProperty('--exp', (4 + q * 96) + '%');
+            }
+            let current = '';
+            for (const s of sections) if (s.top - sy < vh * 0.4) current = s.id;
             navLinks.forEach((link) => link.classList.toggle('active', link.getAttribute('href') === '#' + current));
         }
-        addEventListener('scroll', onScroll, { passive: true });
-        onScroll();
 
+        // ----- 唯一的动画循环：只做数学运算和样式写入 -----
+        function tick(now) {
+            const sy = scrollY;
+            if (sy < heroPin.offsetHeight + 50) heroFrame(sy, now);
+            pageFrame(sy);
+            if (net) net(now, sy);
+            requestAnimationFrame(tick);
+        }
+
+        // ----- 滚动淡入 -----
+        const revealer = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); revealer.unobserve(e.target); } }), { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+        document.querySelectorAll('[data-reveal]').forEach((el) => revealer.observe(el));
+
+        // ----- 数字计数 -----
+        const counter = new IntersectionObserver((entries) => entries.forEach((e) => {
+            if (!e.isIntersecting) return;
+            counter.unobserve(e.target);
+            const el = e.target, to = +el.dataset.count, from = +(el.dataset.from || 0), suffix = el.dataset.suffix || '';
+            if (reduceMotion) return;
+            const start = performance.now(), dur = 1500;
+            (function step(now) {
+                const k = clamp((now - start) / dur), eased = 1 - Math.pow(1 - k, 3);
+                el.textContent = Math.round(lerp(from, to, eased)) + (k === 1 ? suffix : '');
+                if (k < 1) requestAnimationFrame(step);
+            })(start);
+        }), { threshold: 0.6 });
+        document.querySelectorAll('[data-count]').forEach((el) => { if (!reduceMotion) el.textContent = el.dataset.from || '0'; counter.observe(el); });
+
+        // ----- 项目截图：跟随鼠标的 3D 倾斜 -----
+        const tilt = document.getElementById('tilt');
+        if (finePointer && !reduceMotion) {
+            tilt.addEventListener('pointermove', (e) => {
+                const r = tilt.getBoundingClientRect();
+                tilt.style.setProperty('--ty', (((e.clientX - r.left) / r.width - 0.5) * 8).toFixed(2) + 'deg');
+                tilt.style.setProperty('--tx', (-((e.clientY - r.top) / r.height - 0.5) * 6).toFixed(2) + 'deg');
+            });
+            tilt.addEventListener('pointerleave', () => { tilt.style.setProperty('--tx', '0deg'); tilt.style.setProperty('--ty', '0deg'); });
+        }
+
+        // ----- 5. 3D 人才网络：页面加载完成后再取 three.js，不拖慢首屏 -----
+        let net = null;
+        addEventListener('load', () => {
+            const s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+            s.onload = setupNetwork;
+            s.onerror = () => { document.getElementById('network').style.display = 'none'; };
+            document.head.appendChild(s);
+        });
+        function setupNetwork() {
+            const holder = document.getElementById('network');
+            const THREE = window.THREE;
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setPixelRatio(dpr);
+            holder.prepend(renderer.domElement);
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 50);
+            camera.position.set(0, 0, 6);
+            const group = new THREE.Group();
+            scene.add(group);
+            const shell = new THREE.IcosahedronGeometry(1.7, 1);
+            group.add(new THREE.LineSegments(new THREE.WireframeGeometry(shell), new THREE.LineBasicMaterial({ color: 0x9fb0a4, transparent: true, opacity: 0.85 })));
+            // 去重后的顶点 = 网络里的「人」
+            const seen = new Map(), pos = shell.attributes.position;
+            for (let i = 0; i < pos.count; i++) { const key = [pos.getX(i), pos.getY(i), pos.getZ(i)].map((n) => n.toFixed(3)).join(); if (!seen.has(key)) seen.set(key, [pos.getX(i), pos.getY(i), pos.getZ(i)]); }
+            const nodes = new THREE.BufferGeometry();
+            nodes.setAttribute('position', new THREE.Float32BufferAttribute([...seen.values()].flat(), 3));
+            group.add(new THREE.Points(nodes, new THREE.PointsMaterial({ color: 0x2e5b41, size: 0.11 })));
+            const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.62, 2), new THREE.MeshPhongMaterial({ color: 0x55615a, flatShading: true, shininess: 60 }));
+            group.add(core);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+            const light = new THREE.PointLight(0xdff5e6, 1.1); light.position.set(3, 3, 4); scene.add(light);
+            const rim = new THREE.PointLight(0x2e5b41, 0.8); rim.position.set(-3, -2, 2); scene.add(rim);
+            let visible = false, spin = 0, lastSy = scrollY;
+            new IntersectionObserver((entries) => { visible = entries[0].isIntersecting; }).observe(holder);
+            function size() { const w = holder.clientWidth; renderer.setSize(w, w, false); }
+            size(); addEventListener('resize', size);
+            net = (now, sy) => {
+                if (!visible) { lastSy = sy; return; }
+                const v = sy - lastSy; lastSy = sy;
+                spin = lerp(spin, reduceMotion ? 0 : v * 0.004, 0.08);
+                group.rotation.y += (reduceMotion ? 0 : 0.0028) + spin;
+                group.rotation.x = lerp(group.rotation.x, 0.25 + emy * 0.5, 0.05);
+                group.rotation.z = lerp(group.rotation.z, emx * 0.25, 0.05);
+                core.rotation.y -= 0.004;
+                renderer.render(scene, camera);
+            };
+        }
+
+        layout();
+        lastWidth = document.documentElement.clientWidth;
+        colorImg.onload = () => { dirty = true; };
+        document.fonts && document.fonts.ready.then(layout);
+        addEventListener('load', layout);
+        requestAnimationFrame(tick);
+    })();
+    </script>
+
+    <script>
+        // ---------- 职业足迹地图 ----------
         // 1. 初始化地图 (限制缩放，浅色风格)
         var map = L.map('map', {
             center: [25, 170], // 调整中心点以便看到亚洲和北美
