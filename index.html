@@ -26,7 +26,7 @@
 
     <style>
         /* 版式：编辑风格的单栏长页。暖米灰底 + 深绿单一强调色；超大衬线标题，描边胶囊标签。
-           动效：第一屏固定滚动（全屏黑白照片 → 相框照片 + 大字名字 + 签名），鼠标聚光灯上色，
+           动效：第一屏固定滚动（全屏照片 → 相框照片 + 大字名字 + 签名），
            点阵随鼠标变绿，标签漂浮视差，横幅随滚动速度倾斜，3D 人才网络，数字计数，经历横向滑动 */
         :root {
             --bg: #f2f3ef;          /* 暖米灰底 */
@@ -79,7 +79,6 @@
         .stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: var(--bg); }
         .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
         #dots { z-index: 4; }
-        #color { z-index: 3; }
         .marquee { position: absolute; left: 0; right: 0; z-index: 1; display: flex; overflow: hidden; pointer-events: none; user-select: none; opacity: var(--name, 1); }
         .marquee .track { display: flex; flex: none; align-items: center; gap: 0.35em; padding-right: 0.35em; font-family: var(--serif); font-size: clamp(5rem, 13vw, 11rem); line-height: 1; white-space: nowrap; color: var(--ink); animation: slide 40s linear infinite; }
         .marquee .outline { color: transparent; -webkit-text-stroke: 1.2px var(--ink); }
@@ -90,7 +89,7 @@
         @keyframes slide { to { transform: translateX(-100%); } }
 
         .photo { position: absolute; z-index: 2; overflow: hidden; left: 0; top: 0; width: 100%; height: 100%; background: #d9d9d6; will-change: left, top, width, height; }
-        .photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; filter: grayscale(1) contrast(1.05); }
+        .photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; }
         .photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(242,243,239,0.35), transparent 22%, transparent 70%, rgba(22,24,22,0.25)); opacity: var(--veil, 1); pointer-events: none; }
         .signature { position: absolute; z-index: 5; left: 50%; top: 50%; color: var(--green); font-family: var(--script); font-size: clamp(6rem, 13vw, 10rem); line-height: 1; white-space: nowrap; pointer-events: none; transform: translate(-46%, 8%) rotate(-8deg); text-shadow: 0 2px 18px rgba(250, 250, 247, 0.55); clip-path: inset(-20% calc(var(--sig, 1) * -10% + (1 - var(--sig, 1)) * 100%) -20% -10%); }
 
@@ -215,9 +214,8 @@
         .giving { display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: start; }
         .photos { position: relative; height: 470px; }
         .photos figure { position: absolute; overflow: hidden; border: 10px solid var(--paper); border-radius: 18px; background: var(--paper); box-shadow: 0 22px 50px rgba(22, 24, 22, 0.16); transition: transform 0.4s ease; }
-        .photos img { display: block; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.05); transition: filter 0.4s; }
+        .photos img { display: block; width: 100%; height: 100%; object-fit: cover; }
         .photos figure:hover { transform: rotate(0deg) scale(1.03) !important; z-index: 2; }
-        .photos figure:hover img { filter: none; }
         .photos .p1 { top: 0; left: 0; width: 78%; height: 300px; transform: rotate(-2.5deg); }
         .photos .p2 { right: 0; bottom: 0; width: 46%; height: 310px; transform: rotate(3deg); }
         .photos figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 22px 12px 8px; color: white; background: linear-gradient(transparent, rgba(0,0,0,0.6)); font-size: 0.78rem; }
@@ -332,7 +330,6 @@
             </div>
 
             <div class="photo" id="photo"><img id="photo-img" src="profile.jpg" alt="Portrait of Fiona Cui"></div>
-            <canvas id="color" aria-hidden="true"></canvas>
             <canvas id="dots" aria-hidden="true"></canvas>
             <span class="signature" id="signature" aria-hidden="true">Fiona</span>
 
@@ -573,8 +570,6 @@
         const heroPin = document.getElementById('top');
         const stage = document.getElementById('stage');
         const photo = document.getElementById('photo');
-        const photoImg = document.getElementById('photo-img');
-        const colorCanvas = document.getElementById('color');
         const dotsCanvas = document.getElementById('dots');
         const signature = document.getElementById('signature');
         const chipsEl = document.getElementById('chips');
@@ -593,8 +588,7 @@
         function layout() {
             vw = document.documentElement.clientWidth;
             vh = innerHeight;
-            [colorCanvas, dotsCanvas].forEach((c) => { c.width = Math.round(vw * dpr); c.height = Math.round(vh * dpr); });
-            mask.width = Math.round(vw / 2); mask.height = Math.round(vh / 2);
+            dotsCanvas.width = Math.round(vw * dpr); dotsCanvas.height = Math.round(vh * dpr);
             // 经历：桌面端用纵向滚动距离驱动横向移动
             if (vw > 900 && !reduceMotion) {
                 expOverflow = Math.max(0, expTrack.scrollWidth - vw);
@@ -615,14 +609,8 @@
         let lastWidth = 0;
         addEventListener('resize', () => { if (document.documentElement.clientWidth !== lastWidth) { lastWidth = document.documentElement.clientWidth; layout(); } });
 
-        // ----- 1. 鼠标聚光灯：拖尾刷出彩色，慢慢消散 -----
-        const mask = document.createElement('canvas');
-        const mctx = mask.getContext('2d');
-        const cctx = colorCanvas.getContext('2d');
-        const colorImg = new Image();
-        colorImg.src = photoImg.currentSrc || photoImg.src;
+        // ----- 1. 光标位置（缓动后用于点阵） -----
         let pointer = { x: -999, y: -999, ex: -999, ey: -999, inside: false, moved: 0 };
-        let trailAlive = 0;
         stage.addEventListener('pointermove', (e) => {
             if (e.pointerType !== 'mouse') return;
             const r = stage.getBoundingClientRect();
@@ -630,54 +618,6 @@
             if (pointer.ex < -900) { pointer.ex = pointer.x; pointer.ey = pointer.y; }
         });
         stage.addEventListener('pointerleave', () => { pointer.inside = false; });
-        // 触屏：轻点一下短暂显出彩色，不影响滚动
-        stage.addEventListener('pointerdown', (e) => {
-            if (e.pointerType === 'mouse') return;
-            const r = stage.getBoundingClientRect();
-            const x = (e.clientX - r.left) / 2, y = (e.clientY - r.top) / 2;
-            for (let k = 0; k < 6; k++) brush(x, y, 90);
-            trailAlive = performance.now();
-        });
-        function brush(x, y, radius) {
-            const g = mctx.createRadialGradient(x, y, 0, x, y, radius);
-            g.addColorStop(0, 'rgba(0,0,0,0.9)'); g.addColorStop(0.6, 'rgba(0,0,0,0.35)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-            mctx.fillStyle = g; mctx.beginPath(); mctx.arc(x, y, radius, 0, Math.PI * 2); mctx.fill();
-        }
-        // 与 CSS object-fit: cover + object-position: 50% 18% 相同的裁切
-        function coverRect(rx, ry, rw, rh) {
-            const iw = colorImg.naturalWidth, ih = colorImg.naturalHeight;
-            const s = Math.max(rw / iw, rh / ih), dw = iw * s, dh = ih * s;
-            return [rx + (rw - dw) * 0.5, ry + (rh - dh) * 0.18, dw, dh];
-        }
-        function drawColor(rect, radius, now) {
-            if (!colorImg.complete || !colorImg.naturalWidth) return;
-            const painting = pointer.inside && now - pointer.moved < 1200;
-            if (!painting && now - trailAlive > 5000) { if (trailAlive) { cctx.clearRect(0, 0, colorCanvas.width, colorCanvas.height); mctx.clearRect(0, 0, mask.width, mask.height); trailAlive = 0; } return; }
-            // 拖尾慢慢消散……
-            mctx.globalCompositeOperation = 'destination-out';
-            mctx.fillStyle = 'rgba(0,0,0,0.018)';
-            mctx.fillRect(0, 0, mask.width, mask.height);
-            mctx.globalCompositeOperation = 'source-over';
-            // ……画笔跟着缓动后的光标继续画
-            if (painting) {
-                pointer.ex = lerp(pointer.ex, pointer.x, 0.22); pointer.ey = lerp(pointer.ey, pointer.y, 0.22);
-                brush(pointer.ex / 2, pointer.ey / 2, Math.max(60, Math.min(vw, vh) * 0.11));
-                trailAlive = now;
-            }
-            // 彩色照片按遮罩显示
-            cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            cctx.globalCompositeOperation = 'source-over';
-            cctx.clearRect(0, 0, vw, vh);
-            cctx.save();
-            cctx.beginPath();
-            if (cctx.roundRect) cctx.roundRect(rect.x, rect.y, rect.w, rect.h, radius); else cctx.rect(rect.x, rect.y, rect.w, rect.h);
-            cctx.clip();
-            cctx.drawImage(colorImg, ...coverRect(rect.x, rect.y, rect.w, rect.h));
-            cctx.restore();
-            cctx.globalCompositeOperation = 'destination-in';
-            cctx.drawImage(mask, 0, 0, vw, vh);
-            cctx.globalCompositeOperation = 'source-over';
-        }
 
         // ----- 2. 点阵：靠近光标的点变大变绿 -----
         const dctx = dotsCanvas.getContext('2d');
@@ -689,6 +629,7 @@
         }
         let lastDots = '';
         function drawDots(p, now) {
+            pointer.ex = lerp(pointer.ex, pointer.x, 0.22); pointer.ey = lerp(pointer.ey, pointer.y, 0.22);
             const key = [Math.round(pointer.ex), Math.round(pointer.ey), pointer.inside ? 1 : 0, Math.round(p * 100)].join();
             if (key === lastDots && now - pointer.moved > 1300) return;
             lastDots = key;
@@ -735,7 +676,6 @@
                 chip.style.setProperty('--py', (emy * 24 * depth - spread * 60 * depth) + 'px');
             });
             if (!reduceMotion) {
-                drawColor(rect, radius, now);
                 drawDots(p, now);
             }
         }
@@ -853,7 +793,6 @@
 
         layout();
         lastWidth = document.documentElement.clientWidth;
-        colorImg.onload = () => { dirty = true; };
         document.fonts && document.fonts.ready.then(layout);
         addEventListener('load', layout);
         requestAnimationFrame(tick);
