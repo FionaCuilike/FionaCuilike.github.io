@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fiona Cui · My Story</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Mrs+Saint+Delafield&display=swap" rel="stylesheet">
+<style>html,body{margin:0;background:#111}canvas{display:block;width:960px;height:540px}</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.min.js"></script>
+<script>
+// A 60-second story film, drawn frame by frame so every frame is a pure function of time.
+// Rebuild: serve the site folder with a server that accepts PUT /out/<name>, open video/src/story.html,
+// run exportVideo() in the console, then copy out/story.mp4 to video/my-story.mp4.
+const W = 1920, H = 1080, FPS = 30, DURATION = 60;
+const C = { bg: '#f2f3ef', paper: '#fafaf7', ink: '#161816', text: '#3a3d39', muted: '#6f736d', line: '#d9dbd3', green: '#2e5b41', land: '#e3e5dd', landEdge: '#cfd3c8' };
+const SERIF = '"Instrument Serif", Georgia, serif', SANS = '"Instrument Sans", Helvetica, sans-serif', SCRIPT = '"Mrs Saint Delafield", cursive';
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+const easeInOut = (x) => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const fade = (t, start, end, d = 0.6) => clamp(Math.min((t - start) / d, (end - t) / d));
+
+// ----- story content (facts from the website) -----
+const STOPS = [
+    { year: 2014, city: 'Wuhan, China', lon: 114.3055, lat: 30.5928, text: 'Graduated. Started in HR.' },
+    { year: 2015, city: 'Chiang Rai, Thailand', lon: 99.8406, lat: 19.9105, text: 'Volunteer teacher. My first cross-cultural classroom.' },
+    { year: 2016, city: 'New Delhi, India', lon: 77.209, lat: 28.6139, text: 'Built a sales team from 0 to 50.' },
+    { year: 2018, city: 'Jakarta, Indonesia', lon: 106.8456, lat: -6.2088, text: 'Launched Uji Matcha, a matcha brand in Indonesia.' },
+    { year: 2019, city: 'New York, USA', lon: -74.006, lat: 40.7128, text: 'United Nations HQ. Redesigned recruitment workflows.' },
+    { year: 2020, city: 'East Lansing, USA', lon: -84.4838, lat: 42.7369, text: "Master's at Michigan State." },
+    { year: 2021, city: 'Boston, USA', lon: -71.0589, lat: 42.3601, text: 'Biotech and AI hiring at Simcere and Cellarity. Helped Cellarity grow from 85 to 150.' },
+    { year: 2024, city: 'San Francisco, USA', lon: -122.4194, lat: 37.7749, text: 'Founded Globetrek Talent.' },
+    { year: 2025, city: 'Vancouver, Canada', lon: -123.1207, lat: 49.2827, text: 'Hiring AI researchers at Huawei Canada.' },
+];
+
+// ----- timeline (seconds) -----
+const T = { intro: [0, 4.6], map: [4.0, 40.0], stop0: 4.6, stopLen: 3.2, culture: [33.4, 40.0], tools: [39.4, 52.0], give: [51.4, 56.2], end: [55.6, 60] };
+
+// ----- assets -----
+const img = (src) => new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(i); i.onerror = fail; i.src = src; });
+let A = {};
+let land = null, proj = null, pts = [];
+async function load() {
+    const [portrait, atlas, sapa, world] = await Promise.all([
+        img('../../profile.jpg'), img('../../images/contributor-atlas-ranking.jpg'), img('../../images/sapa-2023-panel.jpg'),
+        fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/land-110m.json').then((r) => r.json()),
+    ]);
+    A = { portrait, atlas, sapa };
+    await document.fonts.load(`120px ${SERIF}`); await document.fonts.load(`italic 120px ${SERIF}`);
+    await document.fonts.load(`40px ${SANS}`); await document.fonts.load(`600 40px ${SANS}`); await document.fonts.load(`120px ${SCRIPT}`);
+    const geo = topojson.feature(world, world.objects.land);
+    proj = d3.geoNaturalEarth1().rotate([-170, 0]).fitExtent([[40, 70], [W - 40, H - 30]], geo);
+    // Pre-render land once; the camera only moves this bitmap.
+    land = document.createElement('canvas'); land.width = W; land.height = H;
+    const l = land.getContext('2d');
+    const path = d3.geoPath(proj, l);
+    l.beginPath(); path(geo); l.fillStyle = C.land; l.fill(); l.lineWidth = 1.2; l.strokeStyle = C.landEdge; l.stroke();
+    pts = STOPS.map((s) => proj([s.lon, s.lat]));
+}
+
+// ----- drawing helpers -----
+function bg(alpha = 1) {
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(46,91,65,0.13)';
+    for (let y = 15; y < H; y += 30) for (let x = 15; x < W; x += 30) ctx.fillRect(x - 1, y - 1, 2, 2);
+    ctx.globalAlpha = 1;
+}
+function rrect(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function cover(image, x, y, w, h, fy = 0.15) {
+    const s = Math.max(w / image.width, h / image.height), dw = image.width * s, dh = image.height * s;
+    ctx.drawImage(image, x + (w - dw) / 2, y + (h - dh) * fy, dw, dh);
+}
+function framedPhoto(image, x, y, w, h, { radius = 28, border = 0, rot = 0, alpha = 1, fy = 0.15 } = {}) {
+    ctx.save(); ctx.globalAlpha = alpha;
+    ctx.translate(x + w / 2, y + h / 2); ctx.rotate(rot); ctx.translate(-w / 2, -h / 2);
+    ctx.shadowColor = 'rgba(22,24,22,0.22)'; ctx.shadowBlur = 60; ctx.shadowOffsetY = 26;
+    rrect(-border, -border, w + border * 2, h + border * 2, radius + border); ctx.fillStyle = C.paper; ctx.fill();
+    ctx.shadowColor = 'transparent';
+    rrect(0, 0, w, h, radius); ctx.save(); ctx.clip(); cover(image, 0, 0, w, h, fy); ctx.restore();
+    ctx.restore();
+}
+function text(str, x, y, { font, color = C.ink, alpha = 1, align = 'left', spacing = 0, dy = 0 }) {
+    ctx.save(); ctx.globalAlpha = alpha; ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'alphabetic';
+    if (spacing) ctx.letterSpacing = spacing + 'px';
+    ctx.fillText(str, x, y + dy); ctx.restore();
+}
+function wrap(str, font, maxW) {
+    ctx.font = font; const words = str.split(' '), lines = []; let line = '';
+    for (const w of words) { const test = line ? line + ' ' + w : w; if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test; }
+    if (line) lines.push(line); return lines;
+}
+// Text that rises into place while fading in.
+function rise(str, x, y, opts, t, start, d = 0.7) {
+    const k = easeOut(prog(t, start, start + d));
+    text(str, x, y, { ...opts, alpha: (opts.alpha ?? 1) * k, dy: (1 - k) * 28 });
+}
+function signature(x, y, size, reveal, alpha = 1) {
+    ctx.save(); ctx.globalAlpha = alpha;
+    ctx.font = `${size}px ${SCRIPT}`; const w = ctx.measureText('Fiona').width;
+    ctx.translate(x, y); ctx.rotate(-0.14);
+    ctx.beginPath(); ctx.rect(-40, -size, (w + 80) * reveal, size * 1.6); ctx.clip();
+    ctx.shadowColor = 'rgba(250,250,247,0.7)'; ctx.shadowBlur = 18;
+    ctx.fillStyle = C.green; ctx.fillText('Fiona', 0, 0);
+    ctx.restore();
+}
+
+// ----- scene 1: intro -----
+function intro(t, a) {
+    if (a <= 0) return;
+    ctx.save(); ctx.globalAlpha = a;
+    const k = easeOut(prog(t, 0.1, 1.4));
+    const w = 560 * lerp(0.92, 1, k), h = 700 * lerp(0.92, 1, k);
+    framedPhoto(A.portrait, 300 + (560 - w) / 2, 190 + (700 - h) / 2, w, h, { alpha: k, fy: 0.12 });
+    signature(400, 840, 190, easeInOut(prog(t, 1.3, 3.0)));
+    rise('GLOBAL TECHNICAL & SCIENCE RECRUITER', 990, 420, { font: `500 26px ${SANS}`, color: C.green, spacing: 5 }, t, 0.7);
+    rise('Fiona Cui', 980, 600, { font: `200px ${SERIF}` }, t, 0.9);
+    rise('A recruiter\'s story in nine stops', 990, 690, { font: `44px ${SANS}`, color: C.muted }, t, 1.3);
+    ctx.restore();
+}
+
+// ----- scenes 2 & 3: the journey map -----
+function camera(t) {
+    const i = Math.floor((t - T.stop0) / T.stopLen);
+    const zoomIn = 1.45, wide = 1.0;
+    if (t < T.stop0) { return { cx: pts[0][0], cy: pts[0][1], z: lerp(wide, zoomIn, easeInOut(prog(t, T.map[0], T.stop0))) }; }
+    if (t >= T.culture[0]) {
+        const k = easeInOut(prog(t, T.culture[0], T.culture[0] + 1.6));
+        const last = pts[pts.length - 1];
+        return { cx: lerp(last[0], W / 2, k), cy: lerp(last[1], H / 2, k), z: lerp(zoomIn, wide, k) };
+    }
+    const idx = clamp(i, 0, STOPS.length - 1), u = (t - T.stop0) - idx * T.stopLen;
+    const from = pts[Math.max(0, idx - 1)], to = pts[idx], k = easeInOut(clamp(u / 1.3));
+    return { cx: lerp(from[0], to[0], k), cy: lerp(from[1], to[1], k), z: zoomIn };
+}
+function arc(p, q, upto) {
+    // A gentle arc in screen space, bulging upward.
+    const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2 - Math.hypot(q[0] - p[0], q[1] - p[1]) * 0.18;
+    ctx.beginPath(); ctx.moveTo(p[0], p[1]);
+    const N = 40;
+    for (let s = 1; s <= N * upto; s++) {
+        const u = s / N, x = (1 - u) * (1 - u) * p[0] + 2 * (1 - u) * u * mx + u * u * q[0], y = (1 - u) * (1 - u) * p[1] + 2 * (1 - u) * u * my + u * u * q[1];
+        ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+}
+function journey(t, a) {
+    if (a <= 0) return;
+    ctx.save(); ctx.globalAlpha = a;
+    bg();
+    const cam = camera(t);
+    ctx.save();
+    ctx.translate(W / 2, H / 2); ctx.scale(cam.z, cam.z); ctx.translate(-cam.cx, -cam.cy);
+    ctx.drawImage(land, 0, 0);
+    const reached = t < T.stop0 ? -1 : Math.min(STOPS.length - 1, Math.floor((t - T.stop0) / T.stopLen));
+    // route so far
+    ctx.lineCap = 'round'; ctx.lineWidth = 3.2 / cam.z; ctx.strokeStyle = C.green; ctx.setLineDash([10 / cam.z, 9 / cam.z]);
+    for (let i = 1; i <= reached; i++) {
+        const u = (t - T.stop0) - i * T.stopLen;
+        arc(pts[i - 1], pts[i], i < reached ? 1 : easeInOut(clamp(u / 1.2)));
+    }
+    ctx.setLineDash([]);
+    // stops
+    STOPS.forEach((s, i) => {
+        const [x, y] = pts[i];
+        if (i > reached) { ctx.beginPath(); ctx.arc(x, y, 4 / cam.z, 0, Math.PI * 2); ctx.fillStyle = 'rgba(46,91,65,0.25)'; ctx.fill(); return; }
+        const born = T.stop0 + i * T.stopLen + (i === 0 ? 0 : 1.1);
+        const pop = easeOut(prog(t, born, born + 0.4));
+        const pulse = t >= T.culture[0] ? (Math.sin((t - T.culture[0]) * 4 + i) + 1) / 2 : (i === reached ? ((t - born) % 1.4) / 1.4 : -1);
+        if (pulse >= 0) { ctx.beginPath(); ctx.arc(x, y, (10 + pulse * 22) / cam.z, 0, Math.PI * 2); ctx.strokeStyle = `rgba(46,91,65,${0.45 * (1 - pulse)})`; ctx.lineWidth = 2 / cam.z; ctx.stroke(); }
+        ctx.beginPath(); ctx.arc(x, y, (8 * pop) / cam.z, 0, Math.PI * 2); ctx.fillStyle = C.green; ctx.fill();
+        ctx.lineWidth = 3 / cam.z; ctx.strokeStyle = C.paper; ctx.stroke();
+        if (i === reached && t < T.culture[0]) {
+            ctx.font = `${30 / cam.z}px ${SANS}`; ctx.fillStyle = C.ink; ctx.globalAlpha = a * pop;
+            ctx.fillText(s.city.split(',')[0], x + 16 / cam.z, y - 14 / cam.z); ctx.globalAlpha = a;
+        }
+    });
+    ctx.restore();
+    // caption card for the current stop
+    if (reached >= 0 && t < T.culture[0] + 0.5) {
+        const s = STOPS[reached], start = T.stop0 + reached * T.stopLen;
+        const k = easeOut(prog(t, start + 0.15, start + 0.85));
+        const out = 1 - prog(t, T.culture[0], T.culture[0] + 0.5);
+        const lines = wrap(s.text, `36px ${SANS}`, 640);
+        const ch = 250 + lines.length * 48;
+        ctx.save(); ctx.globalAlpha = a * out;
+        ctx.shadowColor = 'rgba(22,24,22,0.14)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 16;
+        rrect(90, H - 90 - ch, 740, ch, 26); ctx.fillStyle = 'rgba(250,250,247,0.95)'; ctx.fill(); ctx.shadowColor = 'transparent';
+        text(String(s.year), 140, H - 90 - ch + 130, { font: `120px ${SERIF}`, color: C.green, alpha: k, dy: (1 - k) * 20 });
+        text(s.city, 140, H - 90 - ch + 200, { font: `56px ${SERIF}`, alpha: k, dy: (1 - k) * 20 });
+        lines.forEach((ln, j) => text(ln, 142, H - 90 - ch + 262 + j * 48, { font: `36px ${SANS}`, color: C.text, alpha: k, dy: (1 - k) * 20 }));
+        ctx.restore();
+        text(`${String(reached + 1).padStart(2, '0')} / 09`, W - 110, 120, { font: `30px ${SANS}`, color: C.muted, align: 'right', alpha: a * out, spacing: 3 });
+    }
+    // scene 3: what crossing cultures taught me
+    const c = fade(t, T.culture[0] + 1.0, T.culture[1] + 1, 0.8);
+    if (c > 0) {
+        ctx.save(); ctx.globalAlpha = a * c;
+        const pw = 1240, ph = 300, px = (W - pw) / 2, py = H - ph - 80;
+        ctx.shadowColor = 'rgba(22,24,22,0.14)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 18;
+        rrect(px, py, pw, ph, 30); ctx.fillStyle = 'rgba(250,250,247,0.95)'; ctx.fill(); ctx.shadowColor = 'transparent';
+        ctx.restore();
+        rise('Six countries. Ten years.', W / 2, py + 150, { font: `120px ${SERIF}`, align: 'center', alpha: a * c }, t, T.culture[0] + 1.1);
+        rise('Hiring across cultures taught me to see people where they are.', W / 2, py + 235, { font: `40px ${SANS}`, color: C.text, align: 'center', alpha: a * c }, t, T.culture[0] + 1.8);
+    }
+    ctx.restore();
+}
+
+// ----- scene 4: building my own tools -----
+function tools(t, a) {
+    if (a <= 0) return;
+    const t0 = T.tools[0];
+    ctx.save(); ctx.globalAlpha = a; bg(); ctx.restore();
+    ctx.save(); ctx.globalAlpha = a;
+    rise('BUILDING MY OWN TOOLS', 112, 250, { font: `500 26px ${SANS}`, color: C.green, spacing: 5 }, t, t0 + 0.4);
+    wrap('So I build my own sourcing tools.', `110px ${SERIF}`, 700).forEach((ln, j) => rise(ln, 110, 370 + j * 108, { font: `110px ${SERIF}` }, t, t0 + 0.6 + j * 0.15));
+    rise('Contributor Atlas', 112, 690, { font: `italic 64px ${SERIF}`, color: C.green }, t, t0 + 2.6);
+    rise('finds AI engineers by the code they ship.', 112, 745, { font: `36px ${SANS}`, color: C.text }, t, t0 + 2.9);
+    const n = Math.round(1263 * easeOut(prog(t, t0 + 4.2, t0 + 6.4)));
+    rise(n.toLocaleString('en-US'), 108, 910, { font: `150px ${SERIF}`, color: C.green }, t, t0 + 4.0);
+    rise('contributors mapped across vLLM, Triton and SGLang', 112, 965, { font: `32px ${SANS}`, color: C.muted }, t, t0 + 4.4);
+    // screenshot slides in from the right
+    const k = easeOut(prog(t, t0 + 1.4, t0 + 2.8));
+    const w = 1000, h = Math.round(w * A.atlas.height / A.atlas.width);
+    const x = lerp(W + 40, 840, k), y = 250 + (1 - k) * 30;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(lerp(0.05, -0.012, k));
+    ctx.shadowColor = 'rgba(22,24,22,0.2)'; ctx.shadowBlur = 70; ctx.shadowOffsetY = 30;
+    rrect(-18, -52, w + 36, h + 70, 22); ctx.fillStyle = C.paper; ctx.fill(); ctx.shadowColor = 'transparent';
+    [0, 1, 2].forEach((d) => { ctx.beginPath(); ctx.arc(8 + d * 22, -26, 7, 0, Math.PI * 2); ctx.fillStyle = '#d4d6ce'; ctx.fill(); });
+    rrect(0, 0, w, h, 10); ctx.save(); ctx.clip(); ctx.drawImage(A.atlas, 0, 0, w, h); ctx.restore();
+    ctx.restore();
+    ctx.restore();
+}
+
+// ----- scene 5: giving back -----
+function give(t, a) {
+    if (a <= 0) return;
+    const t0 = T.give[0];
+    ctx.save(); ctx.globalAlpha = a; bg(); ctx.restore();
+    const k = easeOut(prog(t, t0 + 0.2, t0 + 1.2));
+    framedPhoto(A.sapa, 110, lerp(270, 240, k), 930, 620, { border: 14, radius: 18, rot: -0.035, alpha: a * k, fy: 0.5 });
+    ctx.save(); ctx.globalAlpha = a;
+    rise('And I share what I learn,', 1150, 470, { font: `78px ${SERIF}` }, t, t0 + 0.7);
+    rise('with 100+ job seekers', 1150, 560, { font: `italic 78px ${SERIF}`, color: C.green }, t, t0 + 0.95);
+    rise('at a time.', 1150, 650, { font: `italic 78px ${SERIF}`, color: C.green }, t, t0 + 1.15);
+    rise('SAPA Career Development Workshop', 1152, 740, { font: `30px ${SANS}`, color: C.muted }, t, t0 + 1.6);
+    ctx.restore();
+}
+
+// ----- scene 6: close -----
+function close(t, a) {
+    if (a <= 0) return;
+    const t0 = T.end[0];
+    ctx.save(); ctx.globalAlpha = a; bg(); ctx.restore();
+    const k = easeOut(prog(t, t0 + 0.1, t0 + 1.1));
+    framedPhoto(A.portrait, 230, 190, 560, 700, { alpha: a * k, fy: 0.12 });
+    signature(330, 840, 190, 1, a * k);
+    ctx.save(); ctx.globalAlpha = a;
+    wrap('I find people by the work they publish.', `104px ${SERIF}`, 900).forEach((ln, j) => rise(ln, 920, 420 + j * 104, { font: `104px ${SERIF}` }, t, t0 + 0.4 + j * 0.15));
+    rise("Let's talk.", 920, 760, { font: `italic 104px ${SERIF}`, color: C.green }, t, t0 + 1.3);
+    rise('fionacuilike.github.io', 924, 850, { font: `600 38px ${SANS}`, color: C.ink }, t, t0 + 1.7);
+    ctx.restore();
+}
+
+function render(t) {
+    ctx.clearRect(0, 0, W, H);
+    bg();
+    intro(t, fade(t, -1, T.intro[1], 0.6));
+    journey(t, fade(t, T.map[0], T.map[1], 0.6));
+    tools(t, fade(t, T.tools[0], T.tools[1], 0.6));
+    give(t, fade(t, T.give[0], T.give[1], 0.6));
+    close(t, fade(t, T.end[0], T.end[1] + 5, 0.6));
+}
+
+// ----- export: deterministic frames → H.264 → MP4, then PUT back to the workbench server -----
+async function exportVideo() {
+    const muxer = new Mp4Muxer.Muxer({ target: new Mp4Muxer.ArrayBufferTarget(), video: { codec: 'avc', width: W, height: H, frameRate: FPS }, fastStart: 'in-memory' });
+    const encoder = new VideoEncoder({ output: (chunk, meta) => muxer.addVideoChunk(chunk, meta), error: (e) => { throw e; } });
+    encoder.configure({ codec: 'avc1.640028', width: W, height: H, bitrate: 2_400_000, framerate: FPS, avc: { format: 'avc' } });
+    const total = DURATION * FPS;
+    for (let i = 0; i < total; i++) {
+        render(i / FPS);
+        const frame = new VideoFrame(canvas, { timestamp: Math.round(i * 1e6 / FPS), duration: Math.round(1e6 / FPS) });
+        encoder.encode(frame, { keyFrame: i % (FPS * 2) === 0 });
+        frame.close();
+        while (encoder.encodeQueueSize > 8) await new Promise((r) => setTimeout(r, 4));
+        if (i % 150 === 0) window.status = `frame ${i}/${total}`;
+    }
+    await encoder.flush();
+    muxer.finalize();
+    const buf = muxer.target.buffer;
+    await fetch('/out/story.mp4', { method: 'PUT', body: buf });
+    return buf.byteLength;
+}
+async function exportPoster(t, name) {
+    render(t);
+    const blob = await new Promise((r) => canvas.toBlob(r, 'image/jpeg', 0.86));
+    await fetch('/out/' + name, { method: 'PUT', body: blob });
+    return blob.size;
+}
+
+window.ready = load().then(() => { render(0); return 'ready'; });
+window.render = render;
+window.exportVideo = exportVideo;
+window.exportPoster = exportPoster;
+</script>
+</body>
+</html>
